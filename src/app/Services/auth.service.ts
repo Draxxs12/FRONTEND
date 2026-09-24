@@ -56,6 +56,12 @@ export class AuthService {
     return this.http.post<MfaResponse>(`${this.apiUrl}/login`, datos);
   }
 
+  resendMfa(challengeToken: string): Observable<MfaResponse> {
+    return this.http.post<MfaResponse>(`${this.apiUrl}/resend-mfa`, {
+      token: challengeToken
+    });
+  }
+
   verifyMfa(challengeToken: string, code: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/verify-mfa`, {
       token: challengeToken, code
