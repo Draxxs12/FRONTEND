@@ -47,7 +47,7 @@
         <div class="input-icono">
           <span>🔢</span>
           <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="codigo"
-                 placeholder="000000" (keyup.enter)="verificarMfa" autocomplete="one-time-code" />
+                 placeholder="000000" (keyup.enter)="verificarMfa()" autocomplete="one-time-code" />
         </div>
       </div>
 
@@ -67,7 +67,7 @@
         <div class="input-icono">
           <span>✉️</span>
           <input type="email" [(ngModel)]="email" placeholder="Correo registrado"
-                 (keyup.enter)="enviarCodigoRecuperacion" autocomplete="email" />
+                 (keyup.enter)="enviarCodigoRecuperacion()" autocomplete="email" />
         </div>
       </div>
 
