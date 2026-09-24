@@ -154,7 +154,7 @@ export class LoginComponent {
     } else if (err?.status === 429) {
       this.error = err?.error || 'Demasiados intentos. Solicita un nuevo código.';
     } else if (err?.status === 503) {
-      this.error = err?.error || 'No se pudo enviar el correo de verificación.';
+      this.error = err?.error || 'No se pudo enviar el correo. Configura MAIL_USERNAME y MAIL_PASSWORD en el backend.';
     } else if (err?.status === 0) {
       this.error = 'No se pudo conectar con el backend. ¿Está encendido en el puerto 8080?';
     } else {
