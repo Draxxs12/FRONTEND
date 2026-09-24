@@ -1,0 +1,117 @@
+<!-- Contenido renderizado dentro del LayoutComponent (sidebar global) -->
+<div class="tarjeta-blanca">
+
+      <!-- Cabecera -->
+      <header class="cabecera">
+        <h2 class="titulo"><span class="icono">📦</span> Productos</h2>
+        <button class="btn-nuevo" (click)="abrirModalNuevo()">+ Nuevo Producto</button>
+      </header>
+
+      <!-- Error -->
+      <div class="alerta-error" *ngIf="error">
+        ⚠️ {{ error }}
+      </div>
+
+      <!-- Buscador -->
+      <div class="buscador">
+        <span class="icono-lupa">🔍</span>
+        <input
+          type="text"
+          placeholder="Buscar por nombre o código..."
+          [(ngModel)]="busqueda"
+          (input)="buscar()"
+        />
+        <span class="icono-filtro">▤</span>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading-wrapper" *ngIf="cargando">
+        <div class="spinner"></div>
+        <span>Cargando productos...</span>
+      </div>
+
+      <!-- Tabla -->
+      <table class="tabla" *ngIf="!cargando">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio Compra</th>
+            <th>Precio Venta</th>
+            <th>Stock</th>
+            <th>Estado</th>
+            <th>Registrado por</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of productosFiltrados">
+            <td>{{ p.codigo || '—' }}</td>
+            <td><strong>{{ p.nombre }}</strong></td>
+            <td>{{ p.categoria?.nombre || '—' }}</td>
+            <td>S/ {{ p.precioCompra | number:'1.2-2' }}</td>
+            <td>S/ {{ p.precioVenta  | number:'1.2-2' }}</td>
+            <td>
+              <span class="badge" [ngClass]="stockClass(p)">{{ p.stock }}</span>
+            </td>
+            <td>
+              <span class="badge"
+                    [ngClass]="p.activo ? 'badge-activo' : 'badge-inactivo'">
+                {{ p.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td><small style="color:#64748b">{{ p.registradoPor || '—' }}</small></td>
+            <td class="acciones-td">
+              <button class="btn-accion btn-editar"
+                      (click)="abrirModalEditar(p)"
+                      title="Editar">✏️</button>
+              <button class="btn-accion btn-eliminar"
+                      (click)="eliminar(p)"
+                      title="Desactivar">🗑️</button>
+            </td>
+          </tr>
+
+          <tr *ngIf="productosFiltrados.length === 0">
+            <td colspan="9" class="texto-vacio">No se encontraron productos</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Contador -->
+      <p class="contador" *ngIf="!cargando && productosFiltrados.length > 0">
+        Mostrando {{ productosFiltrados.length }} producto(s)
+      </p>
+
+    </div>
+
+<!-- ===== MODAL NUEVO / EDITAR PRODUCTO ===== -->
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="$event.target === $event.currentTarget ? cerrarModal() : null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ modoEdicion ? 'Editar' : 'Nuevo' }} Producto</h3>
+    <div class="alerta alerta-error" *ngIf="error">{{ error }}</div>
+    <div class="grid-2">
+      <div class="form-group"><label>Código</label><input class="input" [(ngModel)]="form.codigo" placeholder="PROD-011"></div>
+      <div class="form-group"><label>Nombre</label><input class="input" [(ngModel)]="form.nombre"></div>
+    </div>
+    <div class="form-group">
+      <label>Categoría</label>
+      <select class="select" [ngModel]="form.categoria?.id ?? null" (ngModelChange)="form.categoria = $event ? {id: $event} : null">
+        <option [ngValue]="null">Sin categoría</option>
+        <option *ngFor="let cat of categorias" [ngValue]="cat.id">{{ cat.nombre }}</option>
+      </select>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label>Precio compra (S/)</label><input type="number" class="input" [(ngModel)]="form.precioCompra" min="0"></div>
+      <div class="form-group"><label>Precio venta (S/)</label><input type="number" class="input" [(ngModel)]="form.precioVenta" min="0"></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label>Stock</label><input type="number" class="input" [(ngModel)]="form.stock" min="0"></div>
+      <div class="form-group"><label>Stock mínimo</label><input type="number" class="input" [(ngModel)]="form.stockMinimo" min="0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-light" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>

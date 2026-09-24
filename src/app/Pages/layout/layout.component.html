@@ -1,0 +1,114 @@
+<div class="layout-container">
+
+  <!-- ════════════ SIDEBAR ════════════ -->
+  <aside class="sidebar">
+
+    <div class="profile-section">
+      <div class="avatar-large">
+        <span class="badge-letter">{{ inicial }}</span>
+      </div>
+      <p class="profile-name">{{ nombre }}</p>
+      <p class="profile-role">{{ rol }}</p>
+      <button class="logout-btn" (click)="salir()" title="Cerrar sesión">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 17l5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        </svg>
+        Cerrar sesión
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+
+      <a *ngIf="ver('dashboard')" routerLink="/dashboard" routerLinkActive="active-item" class="nav-item">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 13h8V3H3zM13 21h8V3h-8zM3 21h8v-6H3z"/></svg>
+        Dashboard
+      </a>
+
+      <!-- Ventas -->
+      <div class="nav-group" *ngIf="grupoVentas()">
+        <button class="nav-item group-toggle" (click)="toggle('ventas')">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
+          Ventas
+          <svg class="arrow" [class.open]="grupos.ventas" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="sub-menu" *ngIf="grupos.ventas">
+          <a *ngIf="ver('punto-de-venta')" routerLink="/punto-de-venta" routerLinkActive="sub-active" class="sub-item">Punto de Venta</a>
+          <a *ngIf="ver('historial-ventas')" routerLink="/historial-ventas" routerLinkActive="sub-active" class="sub-item">Historial de Ventas</a>
+          <a *ngIf="ver('devoluciones')" routerLink="/devoluciones" routerLinkActive="sub-active" class="sub-item">Devoluciones</a>
+        </div>
+      </div>
+
+      <a *ngIf="ver('caja')" routerLink="/caja" routerLinkActive="active-item" class="nav-item">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Caja
+      </a>
+
+      <!-- Inventario -->
+      <div class="nav-group" *ngIf="grupoInventario()">
+        <button class="nav-item group-toggle" (click)="toggle('inventario')">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5zM3.3 7L12 12l8.7-5M12 22V12"/></svg>
+          Inventario
+          <svg class="arrow" [class.open]="grupos.inventario" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="sub-menu" *ngIf="grupos.inventario">
+          <a *ngIf="ver('productos')" routerLink="/productos" routerLinkActive="sub-active" class="sub-item">Productos</a>
+          <a *ngIf="ver('categorias')" routerLink="/categorias" routerLinkActive="sub-active" class="sub-item">Categorías</a>
+          <a *ngIf="ver('stock')" routerLink="/stock" routerLinkActive="sub-active" class="sub-item">Stock</a>
+        </div>
+      </div>
+
+      <!-- Abastecimiento -->
+      <div class="nav-group" *ngIf="grupoAbastecimiento()">
+        <button class="nav-item group-toggle" (click)="toggle('abastecimiento')">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7M5.5 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18.5 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg>
+          Abastecimiento
+          <svg class="arrow" [class.open]="grupos.abastecimiento" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="sub-menu" *ngIf="grupos.abastecimiento">
+          <a *ngIf="ver('compras')" routerLink="/compras" routerLinkActive="sub-active" class="sub-item">Compras</a>
+          <a *ngIf="ver('proveedores')" routerLink="/proveedores" routerLinkActive="sub-active" class="sub-item">Proveedores</a>
+        </div>
+      </div>
+
+      <a *ngIf="ver('clientes')" routerLink="/clientes" routerLinkActive="active-item" class="nav-item">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M16 6a3 3 0 0 1 0 6M21 20c0-2-1.5-3.5-4-4.5"/></svg>
+        Clientes
+      </a>
+
+      <a *ngIf="ver('reportes')" routerLink="/reportes" routerLinkActive="active-item" class="nav-item">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h8M8 9h2"/></svg>
+        Reportes
+      </a>
+
+      <!-- Administración -->
+      <div class="nav-group" *ngIf="grupoAdmin()">
+        <button class="nav-item group-toggle" (click)="toggle('administracion')">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 2.6 14H2a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4 7"/></svg>
+          Administración
+          <svg class="arrow" [class.open]="grupos.administracion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="sub-menu" *ngIf="grupos.administracion">
+          <a routerLink="/usuarios" routerLinkActive="sub-active" class="sub-item">Usuarios</a>
+          <a routerLink="/configuracion" routerLinkActive="sub-active" class="sub-item">Configuración</a>
+          <a routerLink="/mantenimiento" routerLinkActive="sub-active" class="sub-item">Mantenimiento</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <p class="brand-top">FERRETERÍA</p>
+      <h3 class="brand-mid">🏠 PROGRESOL</h3>
+      <p class="brand-bottom">CHARITO</p>
+    </div>
+  </aside>
+
+  <!-- ════════════ CONTENIDO ════════════ -->
+  <main class="main-content">
+    <header class="main-header">
+      <span class="header-title">{{ tituloSeccion }}</span>
+    </header>
+    <section class="content-body">
+      <router-outlet></router-outlet>
+    </section>
+  </main>
+</div>

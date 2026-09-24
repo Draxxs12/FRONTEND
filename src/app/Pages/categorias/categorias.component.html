@@ -1,0 +1,57 @@
+<div class="page-title">🏷️ Categorías</div>
+
+<div class="alerta" *ngIf="mensaje" [class.alerta-error]="esError" [class.alerta-ok]="!esError">{{ mensaje }}</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Listado de Categorías</h2>
+    <button class="btn btn-dark" (click)="abrirNuevo()">＋ Nueva Categoría</button>
+  </div>
+
+  <table class="tabla">
+    <thead><tr><th>ID</th><th>Nombre</th><th>Productos</th><th>Registrado por</th><th style="text-align:right">Acciones</th></tr></thead>
+    <tbody>
+      <ng-container *ngIf="!categorias.length">
+        <tr><td class="vacio" colspan="5">No hay categorías registradas</td></tr>
+      </ng-container>
+      <ng-container *ngFor="let c of categorias">
+        <tr>
+          <td>{{ c.id }}</td>
+          <td><strong>{{ c.nombre }}</strong></td>
+          <td>
+            <button class="btn btn-light btn-sm" (click)="toggleExpandir(c.id)">
+              {{ productosDe(c.id).length }} producto(s) {{ expandida === c.id ? '▲' : '▼' }}
+            </button>
+          </td>
+          <td><small style="color:#64748b">{{ c.registradoPor || '—' }}</small></td>
+          <td style="text-align:right">
+            <button class="icon-btn icon-edit" (click)="abrirEditar(c)">✏️</button>
+            <button class="icon-btn icon-del" (click)="eliminar(c)">🗑️</button>
+          </td>
+        </tr>
+        <tr *ngIf="expandida === c.id">
+          <td colspan="5" style="background:#f8fafc">
+            <div *ngIf="productosDe(c.id).length; else sinProd" class="prod-chips">
+              <span class="badge badge-info" *ngFor="let p of productosDe(c.id)">{{ p.nombre }} (stock: {{ p.stock }})</span>
+            </div>
+            <ng-template #sinProd><span style="color:#94a3b8">Sin productos en esta categoría.</span></ng-template>
+          </td>
+        </tr>
+      </ng-container>
+    </tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="$event.target === $event.currentTarget ? cerrar() : null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ modoEdicion ? 'Editar' : 'Nueva' }} Categoría</h3>
+    <div class="form-group">
+      <label>Nombre</label>
+      <input type="text" class="input" [(ngModel)]="form.nombre" placeholder="Ej. Herramientas Eléctricas">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-light" (click)="cerrar()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>

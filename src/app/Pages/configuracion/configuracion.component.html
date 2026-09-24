@@ -1,0 +1,40 @@
+<div class="page-title" style="justify-content:space-between">
+  <span>⚙️ Configuración</span>
+  <button class="btn btn-primary" (click)="guardar()" [disabled]="guardando">
+    {{ guardando ? 'Guardando...' : '💾 Guardar cambios' }}
+  </button>
+</div>
+
+<div class="alerta" *ngIf="mensaje" [class.alerta-error]="esError" [class.alerta-ok]="!esError">{{ mensaje }}</div>
+
+<div class="panel">
+  <h2 style="font-size:1.05rem;margin:0 0 16px">Datos de la empresa</h2>
+
+  <div class="form-group">
+    <label>Nombre de la empresa</label>
+    <input class="input" [(ngModel)]="cfg.nombreEmpresa">
+  </div>
+
+  <div class="form-group">
+    <label>Dirección</label>
+    <input class="input" [(ngModel)]="cfg.direccion">
+  </div>
+
+  <div class="grid-2">
+    <div class="form-group">
+      <label>RUC</label>
+      <input class="input" [(ngModel)]="cfg.ruc" maxlength="20">
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="form-group">
+      <label>Serie de boleta</label>
+      <input class="input" [(ngModel)]="cfg.serieBoleta" maxlength="10">
+    </div>
+    <div class="form-group">
+      <label>Serie de factura</label>
+      <input class="input" [(ngModel)]="cfg.serieFactura" maxlength="10">
+    </div>
+  </div>
+</div>

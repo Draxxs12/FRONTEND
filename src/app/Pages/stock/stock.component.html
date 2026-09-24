@@ -1,0 +1,73 @@
+<div class="page-title">🏬 Stock</div>
+
+<div class="alerta" *ngIf="mensaje" [class.alerta-error]="esError" [class.alerta-ok]="!esError">{{ mensaje }}</div>
+
+<div class="tabs">
+  <button class="tab" [class.activo]="tab==='actual'" (click)="tab='actual'">📦 Stock Actual</button>
+  <button class="tab" [class.activo]="tab==='movimientos'" (click)="tab='movimientos'">📋 Movimientos</button>
+</div>
+
+<!-- STOCK ACTUAL -->
+<div class="panel" *ngIf="tab==='actual'">
+  <div class="search-wrap buscador-bar">
+    <input type="text" [(ngModel)]="busqueda" (input)="filtrar()" placeholder="🔍 Buscar producto...">
+  </div>
+  <table class="tabla">
+    <thead>
+      <tr><th>Producto</th><th>Categoría</th><th>Stock Actual</th><th>Stock Mín.</th><th>Estado</th><th style="text-align:right">Acción</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="!filtrados.length"><td class="vacio" colspan="6">Sin productos</td></tr>
+      <tr *ngFor="let p of filtrados">
+        <td><strong>{{ p.nombre }}</strong><br><small style="color:#94a3b8">{{ p.codigo }}</small></td>
+        <td>{{ p.categoria?.nombre || 'Sin categoría' }}</td>
+        <td>{{ p.stock }}</td>
+        <td>{{ p.stockMinimo }}</td>
+        <td><span class="badge" [ngClass]="estado(p).cls">{{ estado(p).txt }}</span></td>
+        <td style="text-align:right"><button class="btn btn-light btn-sm" (click)="abrirAjuste(p)">Ajustar</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- MOVIMIENTOS -->
+<div class="panel" *ngIf="tab==='movimientos'">
+  <table class="tabla">
+    <thead>
+      <tr><th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Stock Antes</th><th>Stock Después</th><th>Motivo</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="!movimientos.length"><td class="vacio" colspan="7">Sin movimientos</td></tr>
+      <tr *ngFor="let m of movimientos">
+        <td>{{ m.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+        <td>{{ m.producto?.nombre || '—' }}</td>
+        <td>
+          <span class="badge" [class.badge-success]="m.tipo==='Entrada'" [class.badge-danger]="m.tipo==='Salida'" [class.badge-info]="m.tipo==='Ajuste'">{{ m.tipo }}</span>
+        </td>
+        <td>{{ m.cantidad }}</td>
+        <td>{{ m.stockAntes }}</td>
+        <td>{{ m.stockDespues }}</td>
+        <td>{{ m.motivo }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL AJUSTE -->
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="$event.target === $event.currentTarget ? cerrar() : null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>Ajustar stock — {{ productoSel?.nombre }}</h3>
+    <div class="form-group">
+      <label>Nuevo stock</label>
+      <input type="number" class="input" [(ngModel)]="nuevoStock" min="0">
+    </div>
+    <div class="form-group">
+      <label>Motivo</label>
+      <input type="text" class="input" [(ngModel)]="motivo" placeholder="Ej. Conteo físico, merma...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-light" (click)="cerrar()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarAjuste()">Guardar ajuste</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,358 @@
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  background-color: #e6e8eb;
+}
+ 
+.layout-principal {
+  display: flex;
+  height: 100vh;
+}
+ 
+.sidebar {
+  width: 250px;
+  background-color: #313945;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+ 
+.perfil-usuario {
+  display: flex;
+  align-items: center;
+  padding: 30px 20px;
+  gap: 15px;
+  border-bottom: 1px solid #454d5a;
+}
+ 
+.avatar-circulo {
+  width: 50px;
+  height: 50px;
+  background-color: #454d5a;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+}
+ 
+.info-usuario p  { margin: 0; }
+.info-usuario .nombre { font-size: 14px; font-weight: bold; }
+.info-usuario .rol    { font-size: 12px; color: #a0aab5; }
+ 
+.menu {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+}
+ 
+.item-menu {
+  color: #a0aab5;
+  text-decoration: none;
+  padding: 15px 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: background 0.3s;
+}
+ 
+.item-menu:hover,
+.activo-menu {
+  background-color: #454d5a;
+  color: white !important;
+}
+ 
+.titulo-desplegable {
+  list-style: none;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.titulo-desplegable::-webkit-details-marker { display: none; }
+ 
+.contenido-titulo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+ 
+.sub-menu {
+  display: flex;
+  flex-direction: column;
+  padding-left: 50px;
+  margin-bottom: 10px;
+}
+ 
+.sub-item {
+  color: #a0aab5;
+  text-decoration: none;
+  padding: 10px 0;
+  font-size: 13px;
+  transition: color 0.3s;
+}
+.sub-item:hover    { color: white; }
+.sub-item.activo   { color: white; font-weight: bold; }
+ 
+details[open] .flecha { transform: rotate(180deg); }
+.flecha { font-size: 10px; transition: transform 0.3s ease; }
+ 
+.contenido-derecho {
+  flex: 1;
+  overflow-y: auto;
+}
+ 
+/* ══════════════════════════════════════════════════
+   CONTENEDOR PRINCIPAL DEL DASHBOARD
+══════════════════════════════════════════════════ */
+.dashboard-container {
+  padding: 24px;
+  background-color: #f0f2f5;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+}
+ 
+/* ══════════════════════════════════════════════════
+   FILA 1 — TARJETAS DE ESTADÍSTICAS
+   ✅ FIX: Clases que el HTML usa pero el CSS no tenía
+══════════════════════════════════════════════════ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+ 
+.mini-stat-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+  border-left: 5px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+ 
+/* Bordes de color por tarjeta */
+.border-purple { border-left-color: #7c3aed; }
+.border-cyan   { border-left-color: #06b6d4; }
+.border-orange { border-left-color: #f97316; }
+.border-pink   { border-left-color: #ec4899; }
+ 
+.stat-label {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+ 
+.stat-count {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+ 
+/* Colores del número por tarjeta */
+.count-purple { color: #7c3aed; }
+.count-cyan   { color: #06b6d4; }
+.count-orange { color: #f97316; }
+.count-pink   { color: #ec4899; }
+ 
+.charts-main-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1.3fr;
+  gap: 20px;
+}
+.badge-info-soft {
+  background: #ede9fe;
+  color: #6d28d9;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+ 
+ 
+/* ══════════════════════════════════════════════════
+   FILA 3 — GRÁFICOS SECUNDARIOS (Barras + Stock)
+   ✅ FIX: Clases que faltaban en el CSS
+══════════════════════════════════════════════════ */
+.charts-secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+ 
+/* ══════════════════════════════════════════════════
+   FILA 4 — MINIGRÁFICOS
+   ✅ FIX: Clases que faltaban en el CSS
+══════════════════════════════════════════════════ */
+.mini-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+ 
+.mini-chart-card {
+  padding: 16px 20px 12px;
+}
+ 
+.mini-chart-card h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 700;
+}
+ 
+/* ══════════════════════════════════════════════════
+   PANELES (CARDS)
+══════════════════════════════════════════════════ */
+.card-panel {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+ 
+
+ 
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+ 
+.card-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 700;
+}
+ 
+.card-subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+}
+ 
+/* ══════════════════════════════════════════════════
+   TABLA DE STOCK CRÍTICO
+   ✅ FIX: Clase dashboard-table que faltaba
+══════════════════════════════════════════════════ */
+.stock-list-container {
+  overflow-y: auto;
+  max-height: 220px;
+}
+ 
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+ 
+.dashboard-table th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 2px solid #f1f5f9;
+}
+ 
+.dashboard-table td {
+  padding: 10px 12px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+ 
+.stock-critico-valor {
+  color: #dc2626;
+  font-weight: 700;
+}
+ 
+/* ══════════════════════════════════════════════════
+   BADGE STOCK CRÍTICO (alerta en header)
+   ✅ FIX: badge-danger-soft que faltaba
+══════════════════════════════════════════════════ */
+.badge-danger-soft {
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+ 
+/* ══════════════════════════════════════════════════
+   ESTADO VACÍO
+   ✅ FIX: Clases empty-state-container, empty-icon, empty-text-placeholder
+══════════════════════════════════════════════════ */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  gap: 8px;
+  text-align: center;
+}
+ 
+.empty-icon {
+  font-size: 28px;
+}
+ 
+.empty-text-placeholder {
+  font-size: 13px;
+  color: #94a3b8;
+}
+ 
+/* ══════════════════════════════════════════════════
+   INDICADORES DE TENDENCIA
+   ✅ FIX: trend-up y trend-down que faltaban
+══════════════════════════════════════════════════ */
+.trend-up {
+  font-size: 12px;
+  font-weight: 700;
+  color: #16a34a;
+  background: #dcfce7;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+ 
+.trend-down {
+  font-size: 12px;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+ 
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — Pantallas menores a 1200px
+══════════════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .stats-row         { grid-template-columns: repeat(2, 1fr); }
+  .charts-main-row   { grid-template-columns: 1fr; }
+  .charts-secondary-row { grid-template-columns: 1fr; }
+}
+ 
+@media (max-width: 768px) {
+  .stats-row       { grid-template-columns: 1fr 1fr; }
+  .mini-charts-row { grid-template-columns: 1fr; }
+  .sidebar         { display: none; }
+}

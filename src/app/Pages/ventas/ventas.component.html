@@ -1,0 +1,125 @@
+<!-- Contenido renderizado dentro del LayoutComponent (sidebar global) -->
+<div class="tarjeta-blanca">
+
+  <header class="cabecera">
+    <h2 class="titulo"><span class="icono">📊</span> Historial de Ventas</h2>
+  </header>
+
+  <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+
+  <!-- Filtros -->
+  <div class="filtros-barra">
+    <input type="date" [(ngModel)]="fechaInicio" class="input-fecha" />
+    <input type="date" [(ngModel)]="fechaFin" class="input-fecha" />
+    <select [(ngModel)]="estadoFiltro" class="select-estado">
+      <option value="Todos">Todos</option>
+      <option value="Completada">Completada</option>
+      <option value="Anulada">Anulada</option>
+    </select>
+    <button class="btn-filtrar" (click)="cargarVentas()">Filtrar</button>
+    <button class="btn-limpiar" (click)="limpiarFiltros()">Limpiar</button>
+  </div>
+
+  <!-- Tarjetas resumen -->
+  <div class="resumen-cards">
+    <div class="card-stat">
+      <p class="card-label">Total Ventas</p>
+      <p class="card-valor">S/ {{ totalVentas | number:'1.2-2' }}</p>
+    </div>
+    <div class="card-stat">
+      <p class="card-label">N° Ventas</p>
+      <p class="card-valor">{{ numVentas }}</p>
+    </div>
+    <div class="card-stat">
+      <p class="card-label">Anuladas</p>
+      <p class="card-valor">{{ numAnuladas }}</p>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-wrapper" *ngIf="cargando">
+    <div class="spinner"></div>
+    <span>Cargando ventas...</span>
+  </div>
+
+  <!-- Tabla -->
+  <table class="tabla" *ngIf="!cargando">
+    <thead>
+      <tr>
+        <th>Comprobante</th>
+        <th>Cliente</th>
+        <th>Total</th>
+        <th>Pago</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let v of ventasFiltradas">
+        <td><strong>{{ v.numeroComprobante }}</strong></td>
+        <td>{{ v.cliente?.nombre || 'Cliente General' }}</td>
+        <td>S/ {{ v.total | number:'1.2-2' }}</td>
+        <td>{{ v.tipoPago }}</td>
+        <td><span class="badge" [ngClass]="estadoClass(v.estado)">{{ v.estado }}</span></td>
+        <td>{{ v.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+        <td style="white-space:nowrap">
+          <button class="btn-accion btn-editar" (click)="verDetalle(v)" title="Editar / Anular">✏️</button>
+          <button class="btn-accion" (click)="verBoleta(v)" title="Ver boleta / factura" style="font-size:1rem">🧾</button>
+        </td>
+      </tr>
+      <tr *ngIf="ventasFiltradas.length === 0">
+        <td colspan="7" class="texto-vacio">No se encontraron ventas</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="contador" *ngIf="!cargando && ventasFiltradas.length > 0">
+    Mostrando {{ ventasFiltradas.length }} venta(s)
+  </p>
+
+</div>
+
+<!-- ===== MODAL DETALLE / EDITAR / ANULAR VENTA ===== -->
+<div class="modal-overlay" *ngIf="mostrarModal && ventaSeleccionada" (mousedown)="$event.target === $event.currentTarget ? cerrarModal() : null">
+  <div class="modal" style="max-width:600px" (click)="$event.stopPropagation()">
+    <h3>Venta {{ ventaSeleccionada?.numeroComprobante }}</h3>
+
+    <div class="detalle-meta">
+      <span><b>Cliente:</b> {{ ventaSeleccionada?.cliente?.nombre || 'Cliente General' }}</span>
+      <span><b>Fecha:</b> {{ ventaSeleccionada?.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      <span><b>Pago:</b> {{ ventaSeleccionada?.tipoPago }}</span>
+      <span><b>Estado:</b> <span class="badge" [ngClass]="estadoClass(ventaSeleccionada!.estado)">{{ ventaSeleccionada?.estado }}</span></span>
+    </div>
+
+    <p *ngIf="cargandoDetalle" style="color:#64748b">Cargando detalle...</p>
+    <table class="tabla" *ngIf="!cargandoDetalle">
+      <thead><tr><th>Producto</th><th>Cant.</th><th>P. Unit.</th><th>Subtotal</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let d of detalles">
+          <td>{{ d.producto?.nombre || '—' }}</td>
+          <td>{{ d.cantidad }}</td>
+          <td>S/ {{ d.precioUnitario | number:'1.2-2' }}</td>
+          <td>S/ {{ d.subtotal | number:'1.2-2' }}</td>
+        </tr>
+        <tr *ngIf="!detalles.length"><td class="texto-vacio" colspan="4">Sin detalle</td></tr>
+      </tbody>
+    </table>
+
+    <p style="text-align:right;font-weight:700">Total: S/ {{ ventaSeleccionada?.total | number:'1.2-2' }}</p>
+
+    <div class="form-group" *ngIf="ventaSeleccionada?.estado === 'Completada'">
+      <label>Estado de la venta</label>
+      <select class="select" [(ngModel)]="estadoEdit">
+        <option value="Completada">Completada</option>
+        <option value="Anulada">Anulada</option>
+      </select>
+      <small style="color:#94a3b8">Cambiar a "Anulada" devolverá el stock al inventario.</small>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" (click)="guardarEstado()">Guardar cambios</button>
+      <button class="btn btn-light" (click)="cerrarModal()">Cerrar</button>
+    </div>
+  </div>
+</div>

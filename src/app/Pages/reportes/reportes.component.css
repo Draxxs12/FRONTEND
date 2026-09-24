@@ -1,0 +1,8 @@
+:host { display: block; }
+.rep-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.desc { color: #475569; font-size: .86rem; line-height: 1.5; margin: 0 0 14px; }
+.nota { color: #10b981; font-size: .82rem; text-align: center; margin: 0 0 14px; }
+.botonera { display: flex; gap: 9px; flex-wrap: wrap; }
+.btn-ia { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+.ia-panel { border-left: 5px solid #8b5cf6; }
+@media (max-width: 900px) { .rep-grid { grid-template-columns: 1fr; } }

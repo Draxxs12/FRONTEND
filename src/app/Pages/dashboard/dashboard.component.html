@@ -1,0 +1,126 @@
+<!-- Contenido renderizado dentro del LayoutComponent (sidebar global) -->
+<div class="dashboard-container">
+
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+        <button class="btn btn-light" (click)="cargarDatosReales()">🔄 Actualizar</button>
+      </div>
+
+      <!-- ── FILA 1: Tarjetas de estadísticas ── -->
+      <div class="stats-row">
+ 
+        <div class="mini-stat-card border-purple">
+          <span class="stat-label">Ventas hoy</span>
+          <span class="stat-count count-purple">
+            {{ ventasHoy > 0 ? (ventasHoy | number:'1.2-2') : 'S/ --' }}
+          </span>
+        </div>
+ 
+        <div class="mini-stat-card border-cyan">
+          <span class="stat-label">Productos</span>
+          <span class="stat-count count-cyan">{{ totalProductos }}</span>
+        </div>
+ 
+        <div class="mini-stat-card border-orange">
+          <span class="stat-label">Clientes</span>
+          <span class="stat-count count-orange">
+            {{ totalClientes > 0 ? totalClientes : '--' }}
+          </span>
+        </div>
+ 
+        <div class="mini-stat-card border-pink">
+          <span class="stat-label">Stock bajo</span>
+          <span class="stat-count count-pink">{{ totalStockBajo }}</span>
+        </div>
+ 
+      </div>
+ 
+      <!-- ── FILA 2: Líneas + Top Proveedores ── -->
+    <div class="charts-main-row">
+
+      <div class="card-panel chart-large">
+        <div class="card-header">
+          <h3>Tendencia de Ventas</h3>
+          <span class="card-subtitle">Esta semana</span>
+        </div>
+        <div echarts [options]="mainLineChartOptions" style="height: 260px; width: 90%;"></div>
+      </div>
+
+      <div class="card-panel">                               <!-- ✅ card abierto -->
+        <div class="card-header">
+          <div>
+            <h3>Top Proveedores</h3>
+            <span class="card-subtitle">Por monto de compras</span>
+          </div>
+          <span class="badge-info-soft">Top 5</span>
+        </div>
+        <!-- ✅ FIX: faltaba el echarts div -->
+        <div echarts [options]="proveedoresChartOptions" style="height: 260px; width: 100%;"></div>
+      </div>                                                 <!-- ✅ card cerrado -->
+
+    </div>     
+ 
+      <!-- ── FILA 3: Barras de categorías + Tabla stock crítico ── -->
+      <div class="charts-secondary-row">
+
+      <div class="card-panel chart-small">
+        <div class="card-header">
+          <h3>Productos por Categoría</h3>
+        </div>
+        <div echarts [options]="barChartOptions" style="height: 240px; width: 100%;"></div>
+      </div>
+ 
+        <div class="card-panel">
+          <div class="card-header">
+            <h3>Stock Crítico</h3>
+            <span class="badge-danger-soft" *ngIf="totalStockBajo > 0">
+              {{ totalStockBajo }} alertas
+            </span>
+          </div>
+ 
+          <div class="stock-list-container">
+            <table class="dashboard-table" *ngIf="productosStockCritico.length > 0">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Stock Actual</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let prod of productosStockCritico; trackBy: trackById">
+                  <td>{{ prod.nombre }}</td>
+                  <td class="stock-critico-valor">{{ prod.stock }} uds.</td>
+                </tr>
+              </tbody>
+            </table>
+ 
+            <div class="empty-state-container" *ngIf="productosStockCritico.length === 0">
+              <span class="empty-icon">✅</span>
+              <span class="empty-text-placeholder">¡Todo en orden! No hay productos en stock crítico</span>
+            </div>
+          </div>
+        </div>
+ 
+      </div>
+ 
+      <!-- ── FILA 4: Minigráficos ── -->
+      <div class="mini-charts-row">
+ 
+        <div class="card-panel mini-chart-card">
+          <div class="card-header">
+            <h4>Ventas S/.</h4>
+            <span class="trend-up">↑ Subiendo</span>
+          </div>
+          <div echarts [options]="miniLineVentasOptions" style="height: 80px; width: 100%;"></div>
+        </div>
+ 
+        <div class="card-panel mini-chart-card">
+          <div class="card-header">
+            <h4>Compras S/.</h4>
+            <span class="trend-down">↓ Bajando</span>
+          </div>
+          <div echarts [options]="miniLineComprasOptions" style="height: 80px; width: 100%;"></div>
+        </div>
+ 
+      </div>
+ 
+    </div>

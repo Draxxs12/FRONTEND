@@ -1,0 +1,45 @@
+<!-- src/app/Pages/login/login.component.html -->
+
+<div class="login-fondo">
+  <div class="login-caja">
+
+    <div class="login-icono">🔧</div>
+
+    <h2 class="login-titulo">Sistema Ferretería</h2>
+    <p class="login-subtitulo">Ingresa tus credenciales para continuar</p>
+
+    <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+
+    <div class="campo">
+      <label>CORREO ELECTRÓNICO</label>
+      <div class="input-icono">
+        <span>✉️</span>
+        <input
+          type="email"
+          [(ngModel)]="email"
+          placeholder="Ingrese correo"
+          (keyup.enter)="ingresar()"
+        />
+      </div>
+    </div>
+
+    <div class="campo">
+      <label>CONTRASEÑA</label>
+      <div class="input-icono">
+        <span>🔒</span>
+        <input
+          [type]="mostrarPassword ? 'text' : 'password'"
+          [(ngModel)]="password"
+          placeholder="••••••••"
+          (keyup.enter)="ingresar()"
+        />
+        <span class="ojo" (click)="toggleMostrarPassword()">👁️</span>
+      </div>
+    </div>
+
+    <button class="btn-ingresar" (click)="ingresar()" [disabled]="cargando">
+      {{ cargando ? 'Ingresando...' : 'Ingresar al Sistema' }}
+    </button>
+
+  </div>
+</div>

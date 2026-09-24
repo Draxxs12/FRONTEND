@@ -1,0 +1,81 @@
+<div class="page-title">📊 Centro de Reportes y Descargas</div>
+
+<div class="alerta" *ngIf="mensaje" [class.alerta-error]="esError" [class.alerta-ok]="!esError">{{ mensaje }}</div>
+
+<div class="rep-grid">
+  <!-- LIBRO MAYOR -->
+  <div class="panel">
+    <div class="panel-header"><h2>🏛️ Libro Mayor Financiero</h2></div>
+    <p class="desc">Ingresos de caja, egresos a proveedores y obligaciones pendientes (CxP), clasificados por el periodo seleccionado.</p>
+    <div class="grid-2">
+      <div class="form-group"><label>Emisión desde</label><input type="date" class="input" [(ngModel)]="desde"></div>
+      <div class="form-group"><label>Emisión hasta</label><input type="date" class="input" [(ngModel)]="hasta"></div>
+    </div>
+    <div class="botonera">
+      <button class="btn btn-dark" (click)="verLibro()">👁 Resumen en Pantalla</button>
+      <button class="btn btn-success" (click)="excelLibro()">📊 Excel Maestro</button>
+      <button class="btn btn-danger" (click)="pdfLibro()">📄 Docs PDF</button>
+    </div>
+    <button class="btn btn-ia" (click)="analizarIA()" [disabled]="cargandoIa" style="margin-top:10px;width:100%;justify-content:center">
+      {{ cargandoIa ? '🤖 Analizando...' : '🤖 Analizar con IA' }}
+    </button>
+  </div>
+
+  <!-- AUDITORÍA -->
+  <div class="panel">
+    <div class="panel-header"><h2>🏬 Auditoría de Almacén</h2></div>
+    <p class="desc">Recuento de mercadería al <b>stock exacto del momento actual</b>. Calcula tu capital almacenado en soles.</p>
+    <p class="nota">● Se auditará el estado actual de los depósitos.</p>
+    <div class="botonera">
+      <button class="btn btn-dark" (click)="verStock()">👁 Resumen</button>
+      <button class="btn btn-success" (click)="excelStock()">📊 Descargar Stock (Excel)</button>
+      <button class="btn btn-danger" (click)="pdfStock()">📄 PDF</button>
+    </div>
+    <button class="btn btn-ia" (click)="analizarIAStock()" [disabled]="cargandoIaStock" style="margin-top:10px;width:100%;justify-content:center">
+      {{ cargandoIaStock ? '🤖 Analizando...' : '🤖 Analizar almacén con IA' }}
+    </button>
+  </div>
+</div>
+
+<!-- ANÁLISIS IA -->
+<div class="panel ia-panel" *ngIf="analisisIa">
+  <div class="panel-header">
+    <h2>🤖 {{ tituloIa || 'Análisis inteligente' }}</h2>
+    <span class="badge badge-info">{{ fuenteIa }}</span>
+  </div>
+  <p style="white-space:pre-line;line-height:1.6;color:#334155;margin:0">{{ analisisIa }}</p>
+</div>
+
+<!-- RESUMEN LIBRO -->
+<div class="panel" *ngIf="vista==='libro' && libro">
+  <div class="metrics-grid">
+    <div class="metric-card green"><div><h3>S/ {{ libro.totalIngresos.toFixed(2) }}</h3><p>Ingresos</p></div></div>
+    <div class="metric-card orange"><div><h3>S/ {{ libro.totalEgresos.toFixed(2) }}</h3><p>Egresos</p></div></div>
+    <div class="metric-card purple"><div><h3>S/ {{ libro.cuentasPorPagar.toFixed(2) }}</h3><p>Cuentas por Pagar</p></div></div>
+    <div class="metric-card"><div><h3>S/ {{ libro.utilidadBruta.toFixed(2) }}</h3><p>Utilidad Bruta</p></div></div>
+  </div>
+  <h2 style="font-size:1rem;margin:6px 0">Ventas del periodo</h2>
+  <table class="tabla">
+    <thead><tr><th>Fecha</th><th>Comprobante</th><th>Cliente</th><th>Total</th></tr></thead>
+    <tbody>
+      <tr *ngIf="!libro.ventas.length"><td class="vacio" colspan="4">Sin ventas en el periodo</td></tr>
+      <tr *ngFor="let v of libro.ventas"><td>{{ v.fecha }}</td><td>{{ v.comprobante }}</td><td>{{ v.cliente }}</td><td>S/ {{ v.total }}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- RESUMEN STOCK -->
+<div class="panel" *ngIf="vista==='stock' && auditoria">
+  <div class="metrics-grid">
+    <div class="metric-card"><div><h3>S/ {{ auditoria.capitalAlmacenado.toFixed(2) }}</h3><p>Capital almacenado</p></div></div>
+    <div class="metric-card green"><div><h3>{{ auditoria.totalProductos }}</h3><p>Productos auditados</p></div></div>
+  </div>
+  <table class="tabla">
+    <thead><tr><th>Código</th><th>Producto</th><th>Categoría</th><th>Stock</th><th>Valor Stock</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let p of auditoria.productos">
+        <td>{{ p.codigo }}</td><td>{{ p.nombre }}</td><td>{{ p.categoria }}</td><td>{{ p.stock }}</td><td>S/ {{ p.valorStock }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>

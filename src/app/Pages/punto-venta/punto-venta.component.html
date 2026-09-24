@@ -1,0 +1,95 @@
+<div class="pos-titulo">💲 Punto de Venta</div>
+
+<div class="alerta" *ngIf="mensaje" [class.alerta-error]="esError" [class.alerta-ok]="!esError">
+  {{ mensaje }}
+</div>
+
+<div class="pos-grid">
+
+  <!-- CATÁLOGO -->
+  <div class="catalogo">
+    <div class="buscador">
+      <input type="text" [(ngModel)]="busqueda" (input)="filtrar()" placeholder="🔍 Buscar producto por nombre o código...">
+    </div>
+
+    <div class="productos-grid" *ngIf="filtrados.length; else vacioCat">
+      <button class="producto-card" *ngFor="let p of filtrados" (click)="agregar(p)" [disabled]="p.stock <= 0">
+        <span class="p-nombre">{{ p.nombre }}</span>
+        <span class="p-codigo">{{ p.codigo }}</span>
+        <span class="p-precio">S/ {{ p.precioVenta.toFixed(2) }}</span>
+        <span class="p-stock" [class.agotado]="p.stock <= 0">Stock: {{ p.stock }}</span>
+      </button>
+    </div>
+    <ng-template #vacioCat><p class="placeholder-cat">Selecciona productos del catálogo</p></ng-template>
+  </div>
+
+  <!-- CARRITO -->
+  <aside class="carrito-panel">
+    <div class="carrito-header">🛒 Carrito ({{ carrito.length }})</div>
+
+    <div class="carrito-items" *ngIf="carrito.length; else carritoVacio">
+      <div class="item" *ngFor="let i of carrito">
+        <div class="item-info">
+          <span class="item-nombre">{{ i.producto.nombre }}</span>
+          <span class="item-precio">S/ {{ i.producto.precioVenta.toFixed(2) }}</span>
+        </div>
+        <div class="item-controls">
+          <button (click)="cambiar(i, -1)">−</button>
+          <span class="qty">{{ i.cantidad }}</span>
+          <button (click)="cambiar(i, 1)">+</button>
+          <span class="item-sub">S/ {{ (i.producto.precioVenta * i.cantidad).toFixed(2) }}</span>
+          <button class="del" (click)="quitar(i)">🗑</button>
+        </div>
+      </div>
+    </div>
+    <ng-template #carritoVacio>
+      <div class="carrito-empty">
+        <div class="empty-icon">🛒</div>
+        <p>Selecciona productos del catálogo</p>
+      </div>
+    </ng-template>
+
+    <div class="carrito-footer">
+      <select [(ngModel)]="clienteId" class="campo">
+        <option [ngValue]="null">Cliente General</option>
+        <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }}</option>
+      </select>
+
+      <div class="doc-cliente" *ngIf="documentoCliente">
+        {{ clienteSeleccionado?.tipoDocumento }}: {{ documentoCliente }}
+      </div>
+
+      <div class="dos-cols">
+        <select [(ngModel)]="tipoComprobante" class="campo">
+          <option>Boleta</option>
+          <option>Factura</option>
+        </select>
+        <select [(ngModel)]="tipoPago" class="campo">
+          <option>Efectivo</option>
+          <option>Tarjeta</option>
+          <option>Yape</option>
+          <option>Plin</option>
+        </select>
+      </div>
+
+      <input *ngIf="tipoComprobante === 'Factura'" type="text" [(ngModel)]="rucFactura" class="campo"
+             placeholder="RUC del cliente (para factura)" maxlength="20">
+
+      <input type="number" [(ngModel)]="montoRecibido" class="campo" placeholder="Monto recibido (S/)" min="0">
+
+      <div class="totales">
+        <div class="linea"><span>Subtotal:</span><span>S/ {{ subtotal.toFixed(2) }}</span></div>
+        <div class="linea"><span>IGV (18%):</span><span>S/ {{ igv.toFixed(2) }}</span></div>
+        <div class="linea total"><span>TOTAL:</span><span>S/ {{ total.toFixed(2) }}</span></div>
+        <div class="linea cambio" *ngIf="montoRecibido > 0"><span>Cambio:</span><span>S/ {{ cambio.toFixed(2) }}</span></div>
+      </div>
+
+      <div class="acciones">
+        <button class="btn-proforma" (click)="proforma()" [disabled]="!carrito.length">📄 Proforma</button>
+        <button class="btn-venta" (click)="registrar()" [disabled]="cargando || !carrito.length || pagoInsuficiente">
+          {{ cargando ? '...' : '✅ Venta' }}
+        </button>
+      </div>
+    </div>
+  </aside>
+</div>

@@ -1,0 +1,81 @@
+<div class="page-title">🗄️ Caja</div>
+
+<div class="alerta" *ngIf="mensaje" [class.alerta-error]="esError" [class.alerta-ok]="!esError">{{ mensaje }}</div>
+
+<div class="caja-top">
+  <!-- Estado de caja -->
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Estado de Caja</h2>
+      <span class="badge" [class.badge-success]="caja" [class.badge-danger]="!caja">
+        ● {{ caja ? 'Abierta' : 'Cerrada' }}
+      </span>
+    </div>
+
+    <ng-container *ngIf="!caja; else cajaAbierta">
+      <p class="hint">No hay ninguna caja abierta. Abre una para registrar ventas.</p>
+      <div class="form-inline">
+        <input type="number" class="input" [(ngModel)]="montoInicial" placeholder="Monto inicial (S/)" min="0">
+        <button class="btn btn-dark" (click)="abrir()">＋ Abrir Caja</button>
+      </div>
+    </ng-container>
+
+    <ng-template #cajaAbierta>
+      <div class="resumen">
+        <div><span>Monto inicial</span><strong>S/ {{ caja!.montoInicial.toFixed(2) }}</strong></div>
+        <div><span>Ventas</span><strong>S/ {{ caja!.totalVentas.toFixed(2) }}</strong></div>
+        <div><span>Egresos</span><strong>S/ {{ caja!.totalEgresos.toFixed(2) }}</strong></div>
+        <div><span>En caja</span><strong>S/ {{ (caja!.montoInicial + caja!.totalVentas - caja!.totalEgresos).toFixed(2) }}</strong></div>
+      </div>
+      <textarea class="input" [(ngModel)]="observaciones" placeholder="Observaciones de cierre (opcional)" rows="2"></textarea>
+      <button class="btn btn-danger" style="margin-top:10px" (click)="cerrar()">Cerrar Caja</button>
+    </ng-template>
+  </div>
+
+  <!-- Movimientos -->
+  <div class="panel">
+    <div class="panel-header"><h2>Movimientos Recientes</h2></div>
+
+    <div class="form-inline" *ngIf="caja">
+      <select class="select" [(ngModel)]="movimiento.tipo">
+        <option value="Egreso">Egreso</option>
+        <option value="Ingreso">Ingreso</option>
+      </select>
+      <input type="number" class="input" [(ngModel)]="movimiento.monto" placeholder="Monto" min="0">
+      <input type="text" class="input" [(ngModel)]="movimiento.descripcion" placeholder="Descripción">
+      <button class="btn btn-primary" (click)="registrarMovimiento()">Registrar</button>
+    </div>
+
+    <p class="hint" *ngIf="!movimientos.length">Sin movimientos registrados</p>
+    <ul class="mov-list">
+      <li *ngFor="let m of movimientos">
+        <span class="badge" [class.badge-success]="m.tipo==='Ingreso'" [class.badge-danger]="m.tipo==='Egreso'">{{ m.tipo }}</span>
+        <span class="mov-desc">{{ m.descripcion || '—' }}</span>
+        <span class="mov-monto">S/ {{ m.monto.toFixed(2) }}</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<!-- Historial -->
+<div class="panel">
+  <div class="panel-header"><h2>Historial de Cajas</h2></div>
+  <table class="tabla">
+    <thead>
+      <tr><th>Usuario</th><th>Apertura</th><th>Cierre</th><th>M. Inicial</th><th>Ventas</th><th>Egresos</th><th>M. Final</th><th>Estado</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="!historial.length"><td class="vacio" colspan="8">Sin registros</td></tr>
+      <tr *ngFor="let c of historial">
+        <td>{{ c.usuario?.nombre || '—' }}</td>
+        <td>{{ c.apertura | date:'dd/MM/yy HH:mm' }}</td>
+        <td>{{ c.cierre ? (c.cierre | date:'dd/MM/yy HH:mm') : '—' }}</td>
+        <td>S/ {{ c.montoInicial.toFixed(2) }}</td>
+        <td>S/ {{ c.totalVentas.toFixed(2) }}</td>
+        <td>S/ {{ c.totalEgresos.toFixed(2) }}</td>
+        <td>{{ c.montoFinal != null ? 'S/ ' + c.montoFinal.toFixed(2) : '—' }}</td>
+        <td><span class="badge" [class.badge-success]="c.estado==='Abierta'" [class.badge-muted]="c.estado==='Cerrada'">{{ c.estado }}</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>

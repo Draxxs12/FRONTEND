@@ -1,0 +1,90 @@
+<!-- Contenido renderizado dentro del LayoutComponent (sidebar global) -->
+<div class="tarjeta-blanca">
+
+      <header class="cabecera">
+        <h2 class="titulo"><span class="icono">🚚</span> Proveedores</h2>
+        <button class="btn-nuevo" (click)="abrirModalNuevo()">+ Nuevo Proveedor</button>
+      </header>
+
+      <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+
+      <div class="buscador">
+        <span class="icono-lupa">🔍</span>
+        <input type="text"
+               placeholder="Buscar por empresa, RUC o contacto..."
+               [(ngModel)]="busqueda"
+               (input)="buscar()" />
+        <span class="icono-filtro">▤</span>
+      </div>
+
+      <div class="loading-wrapper" *ngIf="cargando">
+        <div class="spinner"></div>
+        <span>Cargando proveedores...</span>
+      </div>
+
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>RUC</th>
+            <th>Empresa</th>
+            <th>Contacto</th>
+            <th>Teléfono</th>
+            <th>Email</th>
+            <th>Estado</th>
+            <th>Registrado por</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngIf="proveedoresFiltrados.length > 0">
+            <tr *ngFor="let p of proveedoresFiltrados">
+              <td>{{ p.ruc || '—' }}</td>
+              <td><strong>{{ p.empresa }}</strong></td>
+              <td>{{ p.contacto || '—' }}</td>
+              <td>{{ p.telefono || '—' }}</td>
+              <td>{{ p.email || '—' }}</td>
+              <td>
+                <span class="badge" [ngClass]="p.activo ? 'badge-activo' : 'badge-inactivo'">
+                  {{ p.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td><small style="color:#64748b">{{ p.registradoPor || '—' }}</small></td>
+              <td class="acciones-td">
+                <button class="btn-accion btn-editar" (click)="abrirModalEditar(p)" title="Editar">✏️</button>
+                <button class="btn-accion btn-eliminar" (click)="eliminar(p)" title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+          </ng-container>
+          <tr *ngIf="!cargando && proveedoresFiltrados.length === 0">
+            <td colspan="8" class="texto-vacio">No se encontraron proveedores</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="contador" *ngIf="proveedoresFiltrados.length > 0">
+        Mostrando {{ proveedoresFiltrados.length }} proveedor(es)
+      </p>
+
+    </div>
+
+<!-- ===== MODAL NUEVO / EDITAR PROVEEDOR ===== -->
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="$event.target === $event.currentTarget ? cerrarModal() : null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <h3>{{ modoEdicion ? 'Editar' : 'Nuevo' }} Proveedor</h3>
+    <div class="alerta alerta-error" *ngIf="error">{{ error }}</div>
+    <div class="form-group"><label>Empresa</label><input class="input" [(ngModel)]="form.empresa"></div>
+    <div class="grid-2">
+      <div class="form-group"><label>RUC</label><input class="input" [(ngModel)]="form.ruc"></div>
+      <div class="form-group"><label>Contacto</label><input class="input" [(ngModel)]="form.contacto"></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label>Teléfono</label><input class="input" [(ngModel)]="form.telefono"></div>
+      <div class="form-group"><label>Email</label><input class="input" [(ngModel)]="form.email"></div>
+    </div>
+    <div class="form-group"><label>Dirección</label><input class="input" [(ngModel)]="form.direccion"></div>
+    <div class="modal-actions">
+      <button class="btn btn-light" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>

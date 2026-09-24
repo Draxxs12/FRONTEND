@@ -1,0 +1,130 @@
+<!-- Contenido renderizado dentro del LayoutComponent (sidebar global) -->
+<div class="tarjeta-blanca">
+
+      <header class="cabecera">
+        <h2 class="titulo"><span class="icono">🛒</span> Compras</h2>
+        <button class="btn-nuevo" (click)="abrirModalNuevo()">+ Nueva Compra</button>
+      </header>
+
+      <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+
+      <div class="loading-wrapper" *ngIf="cargando">
+        <div class="spinner"></div>
+        <span>Cargando compras...</span>
+      </div>
+
+      <table class="tabla" *ngIf="!cargando">
+        <thead>
+          <tr>
+            <th>N° Orden</th>
+            <th>Proveedor</th>
+            <th>Productos</th>
+            <th>Tipo Pago</th>
+            <th>Subtotal</th>
+            <th>IGV</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Fecha Esperada</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngIf="compras.length > 0">
+            <tr *ngFor="let c of compras">
+              <td><strong>{{ c.numeroOrden || '—' }}</strong></td>
+              <td>{{ c.proveedor?.empresa || '—' }}</td>
+              <td>
+                <span *ngIf="!c.detalles || c.detalles.length === 0">—</span>
+                <ul class="lista-productos" *ngIf="c.detalles && c.detalles.length > 0">
+                  <li *ngFor="let d of c.detalles">
+                    {{ d.producto?.nombre }} × {{ d.cantidad }}
+                  </li>
+                </ul>
+              </td>
+              <td>{{ c.tipoPago || '—' }}</td>
+              <td>S/ {{ c.subtotal | number:'1.2-2' }}</td>
+              <td>S/ {{ c.igv | number:'1.2-2' }}</td>
+              <td>S/ {{ c.total | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeEstado(c.estado || '')">{{ c.estado }}</span>
+              </td>
+              <td>{{ c.fechaEsperada || '—' }}</td>
+              <td class="acciones-td">
+                <button class="btn-accion btn-editar"   (click)="abrirModalEditar(c)" title="Editar">✏️</button>
+                <button class="btn-accion btn-eliminar" (click)="eliminar(c)"         title="Eliminar">🗑️</button>
+              </td>
+            </tr>
+          </ng-container>
+          <tr *ngIf="compras.length === 0">
+            <td colspan="10" class="texto-vacio">No se encontraron compras registradas</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="contador" *ngIf="compras.length > 0">
+        Mostrando {{ compras.length }} compra(s)
+      </p>
+
+    </div>
+
+<!-- ===== MODAL NUEVA / EDITAR COMPRA ===== -->
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="$event.target === $event.currentTarget ? cerrarModal() : null">
+  <div class="modal" style="max-width:700px" (click)="$event.stopPropagation()">
+    <h3>{{ modoEdicion ? 'Editar' : 'Nueva' }} Compra</h3>
+    <div class="alerta alerta-error" *ngIf="error">{{ error }}</div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Proveedor</label>
+        <select class="select" [(ngModel)]="form.proveedorId">
+          <option [ngValue]="undefined">Selecciona...</option>
+          <option *ngFor="let p of proveedores" [ngValue]="p.id">{{ p.empresa }}</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado</label>
+        <select class="select" [(ngModel)]="form.estado">
+          <option>Pendiente</option><option>Recibida</option><option>Anulada</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Tipo de pago</label>
+        <select class="select" [(ngModel)]="form.tipoPago">
+          <option>Efectivo</option><option>Transferencia</option><option>Credito</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fecha esperada</label><input type="date" class="input" [(ngModel)]="form.fechaEsperada"></div>
+    </div>
+
+    <div class="panel-header" style="margin:8px 0 4px">
+      <h2 style="font-size:.95rem">Detalle de productos</h2>
+      <button class="btn btn-light btn-sm" (click)="agregarLinea()">＋ Agregar producto</button>
+    </div>
+    <table class="tabla">
+      <thead><tr><th>Producto</th><th>Cant.</th><th>P. Unit.</th><th>Subtotal</th><th></th></tr></thead>
+      <tbody>
+        <tr *ngFor="let d of form.detalles; let i = index">
+          <td>
+            <select class="select" [(ngModel)]="d.productoId" (ngModelChange)="onProductoLinea(i)">
+              <option [ngValue]="undefined">—</option>
+              <option *ngFor="let p of productos" [ngValue]="p.id">{{ p.nombre }}</option>
+            </select>
+          </td>
+          <td><input type="number" class="input" style="width:70px" [(ngModel)]="d.cantidad" (ngModelChange)="recalcular()" min="1"></td>
+          <td><input type="number" class="input" style="width:90px" [(ngModel)]="d.precioUnitario" (ngModelChange)="recalcular()" min="0"></td>
+          <td>S/ {{ (d.subtotal || 0).toFixed(2) }}</td>
+          <td><button class="icon-btn icon-del" (click)="eliminarLinea(i)">🗑️</button></td>
+        </tr>
+        <tr *ngIf="!form.detalles?.length"><td class="vacio" colspan="5">Agrega productos a la compra</td></tr>
+      </tbody>
+    </table>
+    <p style="text-align:right;font-weight:700;margin:6px 0">Total (IGV incl.): S/ {{ (form.total || 0).toFixed(2) }}</p>
+    <div class="form-group"><label>Observaciones</label><input class="input" [(ngModel)]="form.observaciones"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-light" (click)="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>

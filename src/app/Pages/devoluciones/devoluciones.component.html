@@ -1,0 +1,77 @@
+<div class="page-title">↩️ Notas de Crédito / Devoluciones</div>
+
+<div class="alerta" *ngIf="mensaje" [class.alerta-error]="esError" [class.alerta-ok]="!esError">{{ mensaje }}</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Devoluciones registradas</h2>
+    <button class="btn btn-dark" (click)="abrirNueva()">＋ Nueva Devolución</button>
+  </div>
+
+  <table class="tabla">
+    <thead>
+      <tr><th>Fecha</th><th>N° Nota</th><th>Venta Asoc.</th><th>Cliente</th><th>Atendido por</th><th>Reembolso</th><th>Tipo</th></tr>
+    </thead>
+    <tbody>
+      <tr *ngIf="!devoluciones.length"><td class="vacio" colspan="7">No hay devoluciones registradas</td></tr>
+      <tr *ngFor="let d of devoluciones">
+        <td>{{ d.createdAt | date:'dd/MM/yy HH:mm' }}</td>
+        <td><strong>{{ d.numeroNota }}</strong></td>
+        <td>{{ d.venta?.numeroComprobante || '—' }}</td>
+        <td>{{ d.venta?.cliente?.nombre || 'Cliente General' }}</td>
+        <td>{{ d.usuario?.nombre || '—' }}</td>
+        <td>S/ {{ (d.montoReembolso || 0).toFixed(2) }}</td>
+        <td><span class="badge badge-info">{{ d.tipoReembolso }}</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" *ngIf="mostrarModal" (mousedown)="$event.target === $event.currentTarget ? cerrar() : null">
+  <div class="modal" style="max-width:640px" (click)="$event.stopPropagation()">
+    <h3>Nueva Devolución</h3>
+
+    <div class="form-group">
+      <label>Venta asociada</label>
+      <select class="select" [(ngModel)]="ventaSelId" (change)="cargarDetalle()">
+        <option [ngValue]="null">Selecciona una venta...</option>
+        <option *ngFor="let v of ventas" [ngValue]="v.id">
+          {{ v.numeroComprobante }} — {{ v.cliente?.nombre || 'Cliente General' }} (S/ {{ v.total.toFixed(2) }})
+        </option>
+      </select>
+    </div>
+
+    <table class="tabla" *ngIf="lineas.length">
+      <thead><tr><th>Producto</th><th>Vendido</th><th>P. Unit.</th><th>Devolver</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let l of lineas">
+          <td>{{ l.producto?.nombre }}</td>
+          <td>{{ l.cantidad }}</td>
+          <td>S/ {{ l.precioUnitario.toFixed(2) }}</td>
+          <td><input type="number" class="input" style="width:80px" [(ngModel)]="l.devolver" min="0" [max]="l.cantidad"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="grid-2" style="margin-top:12px">
+      <div class="form-group">
+        <label>Motivo</label>
+        <input type="text" class="input" [(ngModel)]="motivo" placeholder="Ej. Producto defectuoso">
+      </div>
+      <div class="form-group">
+        <label>Tipo de reembolso</label>
+        <select class="select" [(ngModel)]="tipoReembolso">
+          <option>Efectivo</option><option>Tarjeta</option><option value="NotaCredito">Nota de Crédito</option>
+        </select>
+      </div>
+    </div>
+
+    <p style="text-align:right;font-weight:700;font-size:1.05rem">Reembolso: S/ {{ totalReembolso.toFixed(2) }}</p>
+
+    <div class="modal-actions">
+      <button class="btn btn-light" (click)="cerrar()">Cancelar</button>
+      <button class="btn btn-success" (click)="registrar()">Registrar devolución</button>
+    </div>
+  </div>
+</div>

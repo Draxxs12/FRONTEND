@@ -1,0 +1,33 @@
+<div class="page-title" style="justify-content:space-between">
+  <span>🛠️ Mantenimiento</span>
+  <button class="btn btn-primary" (click)="verificar()">🔄 Verificar sistema</button>
+</div>
+
+<div class="panel">
+  <h2 style="font-size:1.05rem;margin:0 0 14px">Estado del sistema</h2>
+  <p style="margin:0 0 16px">
+    Conexión con el servidor:
+    <span class="badge" [class.badge-success]="estadoConexion==='ok'"
+          [class.badge-danger]="estadoConexion==='error'"
+          [class.badge-warning]="estadoConexion==='verificando'">
+      {{ estadoConexion==='ok' ? 'Operativo' : (estadoConexion==='error' ? 'Sin conexión' : 'Verificando...') }}
+    </span>
+    <small style="color:#94a3b8;margin-left:10px">Última revisión: {{ ultima | date:'dd/MM/yyyy HH:mm:ss' }}</small>
+  </p>
+
+  <div class="metrics-grid">
+    <div class="metric-card"><div><h3>{{ totProductos }}</h3><p>Productos</p></div></div>
+    <div class="metric-card green"><div><h3>{{ totClientes }}</h3><p>Clientes</p></div></div>
+    <div class="metric-card orange"><div><h3>{{ totVentas }}</h3><p>Ventas</p></div></div>
+    <div class="metric-card purple"><div><h3>{{ totUsuarios }}</h3><p>Usuarios</p></div></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2 style="font-size:1.05rem;margin:0 0 10px">Información técnica</h2>
+  <ul style="color:#475569;line-height:1.9;margin:0;padding-left:18px">
+    <li>Frontend: Angular 21 · Backend: Spring Boot 3.3.5 (Java 17)</li>
+    <li>Base de datos: MySQL · <code>tienda_db</code></li>
+    <li>Autenticación: JWT con expiración de 8 horas</li>
+  </ul>
+</div>
