@@ -12,6 +12,17 @@ export interface LoginResponse {
   rol: string;
 }
 
+export interface PerfilResponse {
+  id: number;
+  nombre: string;
+  email: string;
+  rol: string;
+  activo: boolean;
+  createdAt?: string;
+  registradoPor?: string;
+  dobleFactorActivo: boolean;
+}
+
 export interface MfaResponse {
   requiresMfa: boolean;
   challengeToken: string;
@@ -24,6 +35,22 @@ export class AuthService {
   private apiUrl = `${appsettings.apiUrl}/auth`;
 
   constructor(private http: HttpClient) {}
+
+  getMiPerfil(): Observable<PerfilResponse> {
+    return this.http.get<PerfilResponse>(`${this.apiUrl}/me`);
+  }
+
+  solicitarCambioPassword(currentPassword: string): Observable<{challengeToken: string; email: string; message: string}> {
+    return this.http.post<{challengeToken: string; email: string; message: string}>(
+      `${this.apiUrl}/change-password/request`, { currentPassword }
+    );
+  }
+
+  confirmarCambioPassword(challengeToken: string, code: string, newPassword: string): Observable<{message: string}> {
+    return this.http.post<{message: string}>(`${this.apiUrl}/change-password/confirm`, {
+      token: challengeToken, code, newPassword
+    });
+  }
 
   login(datos: LoginRequest): Observable<MfaResponse> {
     return this.http.post<MfaResponse>(`${this.apiUrl}/login`, datos);
