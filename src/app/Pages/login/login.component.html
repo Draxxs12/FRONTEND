@@ -1,45 +1,110 @@
-<!-- src/app/Pages/login/login.component.html -->
-
 <div class="login-fondo">
   <div class="login-caja">
-
     <div class="login-icono">🔧</div>
 
     <h2 class="login-titulo">Sistema Ferretería</h2>
-    <p class="login-subtitulo">Ingresa tus credenciales para continuar</p>
 
-    <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+    <ng-container *ngIf="pantalla === 'login'">
+      <p class="login-subtitulo">Ingresa tus credenciales para continuar</p>
 
-    <div class="campo">
-      <label>CORREO ELECTRÓNICO</label>
-      <div class="input-icono">
-        <span>✉️</span>
-        <input
-          type="email"
-          [(ngModel)]="email"
-          placeholder="Ingrese correo"
-          (keyup.enter)="ingresar()"
-        />
+      <div class="alerta-ok" *ngIf="mensaje">✓ {{ mensaje }}</div>
+      <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+
+      <div class="campo">
+        <label>CORREO ELECTRÓNICO</label>
+        <div class="input-icono">
+          <span>✉️</span>
+          <input type="email" [(ngModel)]="email" placeholder="Ingrese correo"
+                 (keyup.enter)="ingresar()" autocomplete="username" />
+        </div>
       </div>
-    </div>
 
-    <div class="campo">
-      <label>CONTRASEÑA</label>
-      <div class="input-icono">
-        <span>🔒</span>
-        <input
-          [type]="mostrarPassword ? 'text' : 'password'"
-          [(ngModel)]="password"
-          placeholder="••••••••"
-          (keyup.enter)="ingresar()"
-        />
-        <span class="ojo" (click)="toggleMostrarPassword()">👁️</span>
+      <div class="campo">
+        <label>CONTRASEÑA</label>
+        <div class="input-icono">
+          <span>🔒</span>
+          <input [type]="mostrarPassword ? 'text' : 'password'" [(ngModel)]="password"
+                 placeholder="••••••••" (keyup.enter)="ingresar()" autocomplete="current-password" />
+          <span class="ojo" (click)="toggleMostrarPassword()">👁️</span>
+        </div>
       </div>
-    </div>
 
-    <button class="btn-ingresar" (click)="ingresar()" [disabled]="cargando">
-      {{ cargando ? 'Ingresando...' : 'Ingresar al Sistema' }}
-    </button>
+      <button class="btn-ingresar" (click)="ingresar()" [disabled]="cargando">
+        {{ cargando ? 'Ingresando...' : 'Ingresar al Sistema' }}
+      </button>
 
+      <button class="btn-link" (click)="iniciarRecuperacion()">¿Olvidaste tu contraseña?</button>
+    </ng-container>
+
+    <ng-container *ngIf="pantalla === 'mfa'">
+      <p class="login-subtitulo">Verificación en dos pasos</p>
+      <div class="alerta-ok">✓ {{ mensaje }}</div>
+      <div class="correo-destino">Código enviado a <strong>{{ correoVerificacion }}</strong></div>
+
+      <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+      <div class="campo">
+        <label>CÓDIGO DE VERIFICACIÓN</label>
+        <div class="input-icono">
+          <span>🔢</span>
+          <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="codigo"
+                 placeholder="000000" (keyup.enter)="verificarMfa" autocomplete="one-time-code" />
+        </div>
+      </div>
+
+      <button class="btn-ingresar" (click)="verificarMfa()" [disabled]="cargando">
+        {{ cargando ? 'Verificando...' : 'Verificar código' }}
+      </button>
+      <button class="btn-link" (click)="volverLogin()">Volver al inicio de sesión</button>
+    </ng-container>
+
+    <ng-container *ngIf="pantalla === 'forgot'">
+      <p class="login-subtitulo">Recuperar contraseña</p>
+      <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+      <div class="alerta-ok" *ngIf="mensaje">✓ {{ mensaje }}</div>
+
+      <div class="campo">
+        <label>CORREO ELECTRÓNICO</label>
+        <div class="input-icono">
+          <span>✉️</span>
+          <input type="email" [(ngModel)]="email" placeholder="Correo registrado"
+                 (keyup.enter)="enviarCodigoRecuperacion" autocomplete="email" />
+        </div>
+      </div>
+
+      <button class="btn-ingresar" (click)="enviarCodigoRecuperacion()" [disabled]="cargando">
+        {{ cargando ? 'Enviando...' : 'Enviar código' }}
+      </button>
+      <button class="btn-link" (click)="volverLogin()">Volver al inicio de sesión</button>
+    </ng-container>
+
+    <ng-container *ngIf="pantalla === 'reset'">
+      <p class="login-subtitulo">Restablecer contraseña</p>
+      <div class="alerta-ok" *ngIf="mensaje">✓ {{ mensaje }}</div>
+      <div class="alerta-error" *ngIf="error">⚠️ {{ error }}</div>
+
+      <div class="campo">
+        <label>CÓDIGO DE RECUPERACIÓN</label>
+        <div class="input-icono">
+          <span>🔢</span>
+          <input type="text" inputmode="numeric" maxlength="6" [(ngModel)]="codigo"
+                 placeholder="000000" autocomplete="one-time-code" />
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>NUEVA CONTRASEÑA</label>
+        <div class="input-icono">
+          <span>🔒</span>
+          <input [type]="mostrarNuevaPassword ? 'text' : 'password'" [(ngModel)]="nuevaPassword"
+                 placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+          <span class="ojo" (click)="toggleMostrarNuevaPassword()">👁️</span>
+        </div>
+      </div>
+
+      <button class="btn-ingresar" (click)="restablecerPassword()" [disabled]="cargando">
+        {{ cargando ? 'Actualizando...' : 'Cambiar contraseña' }}
+      </button>
+      <button class="btn-link" (click)="volverLogin()">Cancelar</button>
+    </ng-container>
   </div>
 </div>
