@@ -1,0 +1,124 @@
+<div *ngIf="cargando" class="estado">Cargando tu perfil...</div>
+
+<ng-container *ngIf="!cargando && perfil">
+  <div class="page-title">👤 Mi perfil</div>
+
+  <div class="grid-perfil">
+    <section class="panel perfil-card">
+      <div class="perfil-cabecera">
+        <div class="avatar">{{ perfil.nombre.charAt(0).toUpperCase() }}</div>
+        <div>
+          <h2>{{ perfil.nombre }}</h2>
+          <p>{{ perfil.rol }}</p>
+        </div>
+      </div>
+
+      <div class="dato-grid">
+        <div class="dato"><span>Nombre</span><strong>{{ perfil.nombre }}</strong></div>
+        <div class="dato"><span>Correo electrónico</span><strong>{{ perfil.email }}</strong></div>
+        <div class="dato"><span>Rol</span><strong>{{ perfil.rol }}</strong></div>
+        <div class="dato"><span>Estado</span><strong>{{ perfil.activo ? 'Activo' : 'Inactivo' }}</strong></div>
+        <div class="dato" *ngIf="perfil.createdAt"><span>Fecha de registro</span><strong>{{ perfil.createdAt | date:'dd/MM/yyyy HH:mm' }}</strong></div>
+        <div class="dato" *ngIf="perfil.registradoPor"><span>Registrado por</span><strong>{{ perfil.registradoPor }}</strong></div>
+      </div>
+    </section>
+
+    <section class="panel seguridad-card">
+      <div class="panel-head">
+        <div>
+          <h2>Seguridad</h2>
+          <p>Administra la seguridad de tu cuenta.</p>
+        </div>
+      </div>
+
+      <div class="seguridad-item">
+        <div class="seg-icon">🔐</div>
+        <div class="seg-info">
+          <strong>Doble factor de autenticación</strong>
+          <p>Activo y obligatorio. En cada inicio de sesión se envía un código de 6 dígitos a tu correo registrado.</p>
+        </div>
+        <span class="estado-seguro">ACTIVO</span>
+      </div>
+
+      <div class="seguridad-item">
+        <div class="seg-icon">🔑</div>
+        <div class="seg-info">
+          <strong>Contraseña</strong>
+          <p>Para cambiarla debes confirmar tu contraseña actual y validar el código enviado a tu correo.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" (click)="abrirCambioPassword()">Cambiar contraseña</button>
+      </div>
+
+      <div class="alerta alerta-error" *ngIf="error">{{ error }}</div>
+      <div class="alerta alerta-ok" *ngIf="mensaje">{{ mensaje }}</div>
+    </section>
+  </div>
+</ng-container>
+
+<div class="modal-overlay" *ngIf="mostrarCambio" (mousedown)="$event.target === $event.currentTarget ? cancelarCambio() : null">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-title-row">
+      <div>
+        <h3>Cambiar contraseña</h3>
+        <p *ngIf="pasoCambio === 'password'">Primero confirma tu contraseña actual.</p>
+        <p *ngIf="pasoCambio === 'codigo'">Segundo factor: valida el código enviado a <strong>{{ correoVerificacion }}</strong>.</p>
+      </div>
+      <button class="cerrar-modal" (click)="cancelarCambio()">×</button>
+    </div>
+
+    <div class="alerta alerta-error" *ngIf="error">{{ error }}</div>
+    <div class="alerta alerta-ok" *ngIf="mensaje">{{ mensaje }}</div>
+
+    <ng-container *ngIf="pasoCambio === 'password'">
+      <div class="form-group">
+        <label>Contraseña actual</label>
+        <input class="input" type="password" [(ngModel)]="contrasenaActual" autocomplete="current-password">
+      </div>
+
+      <div class="form-group">
+        <label>Nueva contraseña</label>
+        <input class="input" type="password" [(ngModel)]="nuevaPassword" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+      </div>
+
+      <div class="form-group">
+        <label>Confirmar nueva contraseña</label>
+        <input class="input" type="password" [(ngModel)]="confirmarPassword" autocomplete="new-password">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-light" (click)="cancelarCambio()">Cancelar</button>
+        <button class="btn btn-primary" (click)="solicitarCodigo()" [disabled]="guardando">
+          {{ guardando ? 'Enviando...' : 'Enviar código de verificación' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="pasoCambio === 'codigo'">
+      <div class="form-group">
+        <label>Código de verificación</label>
+        <input class="input codigo-input" type="text" inputmode="numeric" maxlength="6"
+               [(ngModel)]="codigo" placeholder="000000" autocomplete="one-time-code">
+      </div>
+
+      <div class="form-group">
+        <label>Nueva contraseña</label>
+        <input class="input" type="password" [(ngModel)]="nuevaPassword" autocomplete="new-password">
+      </div>
+
+      <div class="form-group">
+        <label>Confirmar nueva contraseña</label>
+        <input class="input" type="password" [(ngModel)]="confirmarPassword" autocomplete="new-password">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-light" (click)="cancelarCambio()">Cancelar</button>
+        <button class="btn btn-light" (click)="reenviarCodigo()" [disabled]="guardando">Reenviar código</button>
+        <button class="btn btn-primary" (click)="confirmarCambio()" [disabled]="guardando">
+          {{ guardando ? 'Actualizando...' : 'Confirmar cambio' }}
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<div class="estado error" *ngIf="!cargando && !perfil">{{ error }}</div>
