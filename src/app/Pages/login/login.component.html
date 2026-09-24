@@ -54,6 +54,12 @@
       <button class="btn-ingresar" (click)="verificarMfa()" [disabled]="cargando">
         {{ cargando ? 'Verificando...' : 'Verificar código' }}
       </button>
+
+      <button class="btn-link btn-reenviar" (click)="reenviarCodigo()"
+              [disabled]="cargando || segundosReenvio > 0">
+        {{ segundosReenvio > 0 ? 'Reenviar código en ' + segundosReenvio + ' s' : 'Reenviar código' }}
+      </button>
+
       <button class="btn-link" (click)="volverLogin()">Volver al inicio de sesión</button>
     </ng-container>
 
