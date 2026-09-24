@@ -18,11 +18,13 @@ import { ReportesComponent }     from './Pages/reportes/reportes.component';
 import { UsuariosComponent }     from './Pages/usuarios/usuarios.component';
 import { ConfiguracionComponent } from './Pages/configuracion/configuracion.component';
 import { MantenimientoComponent } from './Pages/mantenimiento/mantenimiento.component';
+import { PerfilComponent } from './Pages/perfil/perfil.component';
 import { authGuard }             from './Guards/auth.guard';
 import { rolGuard }              from './Guards/rol.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  { path: 'perfil', component: PerfilComponent, canActivate: [authGuard], data: { titulo: 'Mi perfil' } },
 
   {
     path: '',
