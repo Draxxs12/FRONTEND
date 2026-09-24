@@ -24,13 +24,12 @@ import { rolGuard }              from './Guards/rol.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
-  { path: 'perfil', component: PerfilComponent, canActivate: [authGuard], data: { titulo: 'Mi perfil' } },
-
   {
     path: '',
     component: LayoutComponent,
     canActivate: [authGuard],
     children: [
+      { path: 'perfil', component: PerfilComponent, data: { titulo: 'Mi perfil' } },
       { path: 'dashboard',        component: DashboardComponent,    canActivate: [rolGuard], data: { titulo: 'Dashboard' } },
       { path: 'punto-de-venta',   component: PuntoVentaComponent,   canActivate: [rolGuard], data: { titulo: 'Ventas' } },
       { path: 'historial-ventas', component: VentasComponent,       canActivate: [rolGuard], data: { titulo: 'Ventas' } },
