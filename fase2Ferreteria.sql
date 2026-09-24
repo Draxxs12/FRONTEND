@@ -126,9 +126,14 @@ INSERT INTO roles (nombre) VALUES
 
 -- Contraseña: admin123 (bcrypt simulado para prototipo)
 INSERT INTO usuarios (nombre, email, password_hash, rol_id) VALUES
-  ('Ana Torres',    'admin@tienda.com',       '$2a$10$HASH_ADMIN', 1),
-  ('Luis Mendoza',  'recepcion@tienda.com',   '$2a$10$HASH_RECEP', 2),
-  ('Carlos Ruiz',   'almacen@tienda.com',     '$2a$10$HASH_ALMC',  3);
+  -- Usuarios creados por el sistema
+  ('Dany',   'midanale12@gmail.com',         '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW', 1),
+  ('Dany2',  'bacadany58@gmail.com',         '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW', 2),
+  ('Dany3',  'aalessandro.baca57@gmail.com', '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW', 3),
+  -- Usuarios creados por Dany desde la carga inicial
+  ('Alfredo','alfredomq82@gmail.com',        '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW', 1),
+  ('Frank',  'franckyc2013@gmail.com',       '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW', 1),
+  ('Angel',  'Asp.asrp@gmail.com',           '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW', 1);
 
 INSERT INTO clientes (nombre, tipo_documento, numero_documento, telefono, email) VALUES
   ('Cliente General', 'DNI', '00000000', '',            ''),
@@ -271,31 +276,27 @@ INSERT INTO detalle_compra (compra_id, producto_id, cantidad, precio_unitario, s
   (1, 5, 10, 12.00, 120.00);
   
   -- =============================================
--- Actualizar usuarios con contraseñas BCrypt REALES
--- Ejecuta esto en tu tienda_db
--- Contraseña para los 3 usuarios: admin123
+-- CONTRASEÑAS INICIALES
+-- Contraseña para los 6 usuarios iniciales: admin123
 -- =============================================
 
 USE tienda_db;
 
-UPDATE usuarios SET password_hash = '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW'
-WHERE email = 'admin@tienda.com';
+UPDATE usuarios
+SET password_hash = '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW'
+WHERE email IN (
+  'midanale12@gmail.com',
+  'bacadany58@gmail.com',
+  'aalessandro.baca57@gmail.com',
+  'alfredomq82@gmail.com',
+  'franckyc2013@gmail.com',
+  'Asp.asrp@gmail.com'
+);
 
-UPDATE usuarios SET password_hash = '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW'
-WHERE email = 'recepcion@tienda.com';
-
-UPDATE usuarios SET password_hash = '$2b$10$cYEuK/WaNzdOQBSmaos.NutRFjjCKcW5ZlxBR9rUtml12XK/8nVCW'
-WHERE email = 'almacen@tienda.com';
-
--- Verifica que se actualizaron
-SELECT id, nombre, email, password_hash FROM usuarios;
-
--- ═══════════════════════════════════════════════
--- CREDENCIALES PARA PROBAR EL LOGIN:
---   admin@tienda.com      / admin123
---   recepcion@tienda.com  / admin123
---   almacen@tienda.com    / admin123
--- ═══════════════════════════════════════════════
+-- =============================================
+-- CREDENCIALES PARA PROBAR EL LOGIN
+-- Todos los usuarios iniciales usan: admin123
+-- =============================================
 
 -- =============================================
 -- FASE 3 — CAJA, MOVIMIENTOS Y DEVOLUCIONES
@@ -497,51 +498,66 @@ DELIMITER ;
 CALL add_reg_por();
 DROP PROCEDURE IF EXISTS add_reg_por;
 
+-- ── Identidad de los usuarios iniciales ──
+UPDATE usuarios SET registrado_por = 'Sistema'
+WHERE email IN (
+  'midanale12@gmail.com',
+  'bacadany58@gmail.com',
+  'aalessandro.baca57@gmail.com'
+);
+
+UPDATE usuarios SET registrado_por = 'Dany'
+WHERE email IN (
+  'alfredomq82@gmail.com',
+  'franckyc2013@gmail.com',
+  'Asp.asrp@gmail.com'
+);
+
 -- ── Rellena quién registró los datos que estaban vacíos ──
-UPDATE usuarios    SET registrado_por = 'Sistema'    WHERE registrado_por IS NULL AND email = 'admin@tienda.com';
-UPDATE usuarios    SET registrado_por = 'Ana Torres' WHERE registrado_por IS NULL;
-UPDATE categorias  SET registrado_por = 'Ana Torres' WHERE registrado_por IS NULL;
-UPDATE productos   SET registrado_por = 'Carlos Ruiz' WHERE registrado_por IS NULL;
-UPDATE clientes    SET registrado_por = 'Luis Mendoza' WHERE registrado_por IS NULL;
-UPDATE proveedores SET registrado_por = 'Ana Torres' WHERE registrado_por IS NULL;
+UPDATE usuarios    SET registrado_por = 'Sistema'    WHERE registrado_por IS NULL AND email = 'midanale12@gmail.com';
+UPDATE usuarios    SET registrado_por = 'Dany' WHERE registrado_por IS NULL;
+UPDATE categorias  SET registrado_por = 'Dany' WHERE registrado_por IS NULL;
+UPDATE productos   SET registrado_por = 'Dany3' WHERE registrado_por IS NULL;
+UPDATE clientes    SET registrado_por = 'Dany2' WHERE registrado_por IS NULL;
+UPDATE proveedores SET registrado_por = 'Dany' WHERE registrado_por IS NULL;
 
 -- ── Más clientes ──
 INSERT INTO clientes (nombre, tipo_documento, numero_documento, telefono, email, registrado_por) VALUES
- ('Juan Ramírez',                'DNI', '41258963',    '987112233', 'juanr@gmail.com',          'Luis Mendoza'),
- ('Constructora Andina SAC',     'RUC', '20481239876', '01-456-7890','ventas@andina.com',        'Ana Torres'),
- ('Rosa Huamán',                 'DNI', '09876543',    '981223344', 'rosah@hotmail.com',        'Sofía Ramírez'),
- ('Ferretería El Tornillo EIRL', 'RUC', '20551122334', '986554433', 'contacto@eltornillo.com',  'Luis Mendoza'),
- ('Miguel Ángel Soto',           'DNI', '70154896',    '999888777', 'msoto@gmail.com',          'Sofía Ramírez'),
- ('Distribuidora San Martín',    'RUC', '20669988771', '01-778-9900','compras@sanmartin.com',    'Ana Torres');
+ ('Juan Ramírez',                'DNI', '41258963',    '987112233', 'juanr@gmail.com',          'Dany2'),
+ ('Constructora Andina SAC',     'RUC', '20481239876', '01-456-7890','ventas@andina.com',        'Dany'),
+ ('Rosa Huamán',                 'DNI', '09876543',    '981223344', 'rosah@hotmail.com',        'Dany2'),
+ ('Ferretería El Tornillo EIRL', 'RUC', '20551122334', '986554433', 'contacto@eltornillo.com',  'Dany2'),
+ ('Miguel Ángel Soto',           'DNI', '70154896',    '999888777', 'msoto@gmail.com',          'Dany2'),
+ ('Distribuidora San Martín',    'RUC', '20669988771', '01-778-9900','compras@sanmartin.com',    'Dany');
 
 -- ── Más proveedores ──
 INSERT INTO proveedores (empresa, ruc, contacto, telefono, email, direccion, registrado_por) VALUES
- ('Aceros del Perú SAC',      '20334455667', 'Gloria Vega',  '01-222-3344', 'ventas@acerosperu.com',    'Av. Argentina 1200, Callao', 'Ana Torres'),
- ('Pinturas Tricolor EIRL',   '20447788990', 'Raúl Díaz',    '01-333-4455', 'raul@tricolor.com',        'Jr. Puno 456, Lima',        'Carlos Ruiz'),
- ('Electro Suministros SAC',  '20556677889', 'Nadia Flores', '01-444-5566', 'nadia@electrosum.com',     'Av. Wilson 789, Lima',      'Carlos Ruiz'),
- ('Cemento Andino Distrib.',  '20667788991', 'Pablo Ruiz',   '01-555-6677', 'pablo@cementoandino.com',  'Panamericana Sur km 20',    'Ana Torres');
+ ('Aceros del Perú SAC',      '20334455667', 'Gloria Vega',  '01-222-3344', 'ventas@acerosperu.com',    'Av. Argentina 1200, Callao', 'Dany'),
+ ('Pinturas Tricolor EIRL',   '20447788990', 'Raúl Díaz',    '01-333-4455', 'raul@tricolor.com',        'Jr. Puno 456, Lima',        'Dany3'),
+ ('Electro Suministros SAC',  '20556677889', 'Nadia Flores', '01-444-5566', 'nadia@electrosum.com',     'Av. Wilson 789, Lima',      'Dany3'),
+ ('Cemento Andino Distrib.',  '20667788991', 'Pablo Ruiz',   '01-555-6677', 'pablo@cementoandino.com',  'Panamericana Sur km 20',    'Dany');
 
 -- ── Más productos ──
 INSERT INTO productos (codigo, nombre, categoria_id, precio_compra, precio_venta, stock, stock_minimo, activo, registrado_por) VALUES
- ('PROD-030','Carretilla Buggy 90L',        (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1),120.00,215.00, 8, 3,1,'Carlos Ruiz'),
- ('PROD-031','Escalera Aluminio 7 pasos',   (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1), 95.00,175.00,10, 3,1,'Carlos Ruiz'),
- ('PROD-032','Pintura Látex Blanco 4L',     (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1), 28.00, 52.00,40, 8,1,'Ana Torres'),
- ('PROD-033','Rodillo de Pintura 9 pulg',   (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1),  5.00, 11.00,60,15,1,'Ana Torres'),
- ('PROD-034','Guantes de Seguridad',        (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1),  3.50,  8.00,120,25,1,'Sofía Ramírez');
+ ('PROD-030','Carretilla Buggy 90L',        (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1),120.00,215.00, 8, 3,1,'Dany3'),
+ ('PROD-031','Escalera Aluminio 7 pasos',   (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1), 95.00,175.00,10, 3,1,'Dany3'),
+ ('PROD-032','Pintura Látex Blanco 4L',     (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1), 28.00, 52.00,40, 8,1,'Dany'),
+ ('PROD-033','Rodillo de Pintura 9 pulg',   (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1),  5.00, 11.00,60,15,1,'Dany'),
+ ('PROD-034','Guantes de Seguridad',        (SELECT id FROM categorias WHERE nombre='Ferretería General' LIMIT 1),  3.50,  8.00,120,25,1,'Dany2');
 
 -- ── VENTAS REALIZADAS (cabecera) ──
 INSERT INTO ventas (numero_comprobante, cliente_id, usuario_id, subtotal, igv, total, tipo_pago, estado, created_at) VALUES
- ('B001-00100',(SELECT id FROM clientes WHERE nombre='Cliente General' LIMIT 1),      (SELECT id FROM usuarios WHERE email='recepcion@tienda.com'),  49.00,  8.82,  57.82,'Efectivo','Completada', NOW()),
- ('B001-00101',(SELECT id FROM clientes WHERE nombre='María García' LIMIT 1),         (SELECT id FROM usuarios WHERE email='sofia@tienda.com'),     159.90, 28.78, 188.68,'Tarjeta','Completada', NOW()),
- ('B001-00102',(SELECT id FROM clientes WHERE nombre='Juan Ramírez' LIMIT 1),         (SELECT id FROM usuarios WHERE email='recepcion@tienda.com'), 102.50, 18.45, 120.95,'Efectivo','Completada', NOW() - INTERVAL 1 DAY),
- ('B001-00103',(SELECT id FROM clientes WHERE nombre='Rosa Huamán' LIMIT 1),          (SELECT id FROM usuarios WHERE email='sofia@tienda.com'),      66.00, 11.88,  77.88,'Yape','Completada',    NOW() - INTERVAL 2 DAY),
- ('B001-00104',(SELECT id FROM clientes WHERE nombre='Cliente General' LIMIT 1),      (SELECT id FROM usuarios WHERE email='recepcion@tienda.com'),  63.50, 11.43,  74.93,'Efectivo','Completada', NOW() - INTERVAL 3 DAY),
- ('B001-00105',(SELECT id FROM clientes WHERE nombre='Empresa ABC SAC' LIMIT 1),      (SELECT id FROM usuarios WHERE email='admin@tienda.com'),    179.00, 32.22, 211.22,'Tarjeta','Completada',  NOW() - INTERVAL 4 DAY),
- ('B001-00106',(SELECT id FROM clientes WHERE nombre='Constructora Andina SAC' LIMIT 1),(SELECT id FROM usuarios WHERE email='recepcion@tienda.com'),70.00, 12.60,  82.60,'Efectivo','Completada', NOW() - INTERVAL 5 DAY),
- ('B001-00107',(SELECT id FROM clientes WHERE nombre='Cliente General' LIMIT 1),      (SELECT id FROM usuarios WHERE email='sofia@tienda.com'),      84.00, 15.12,  99.12,'Efectivo','Completada', NOW() - INTERVAL 6 DAY),
- ('B001-00108',(SELECT id FROM clientes WHERE nombre='Miguel Ángel Soto' LIMIT 1),    (SELECT id FROM usuarios WHERE email='recepcion@tienda.com'), 229.00, 41.22, 270.22,'Tarjeta','Completada',  NOW()),
- ('B001-00109',(SELECT id FROM clientes WHERE nombre='Rosa Huamán' LIMIT 1),          (SELECT id FROM usuarios WHERE email='sofia@tienda.com'),     148.00, 26.64, 174.64,'Efectivo','Completada', NOW() - INTERVAL 1 DAY),
- ('B001-00110',(SELECT id FROM clientes WHERE nombre='María García' LIMIT 1),         (SELECT id FROM usuarios WHERE email='recepcion@tienda.com'),  28.00,  5.04,  33.04,'Yape','Anulada',       NOW() - INTERVAL 2 DAY);
+ ('B001-00100',(SELECT id FROM clientes WHERE nombre='Cliente General' LIMIT 1),      (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),  49.00,  8.82,  57.82,'Efectivo','Completada', NOW()),
+ ('B001-00101',(SELECT id FROM clientes WHERE nombre='María García' LIMIT 1),         (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),     159.90, 28.78, 188.68,'Tarjeta','Completada', NOW()),
+ ('B001-00102',(SELECT id FROM clientes WHERE nombre='Juan Ramírez' LIMIT 1),         (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'), 102.50, 18.45, 120.95,'Efectivo','Completada', NOW() - INTERVAL 1 DAY),
+ ('B001-00103',(SELECT id FROM clientes WHERE nombre='Rosa Huamán' LIMIT 1),          (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),      66.00, 11.88,  77.88,'Yape','Completada',    NOW() - INTERVAL 2 DAY),
+ ('B001-00104',(SELECT id FROM clientes WHERE nombre='Cliente General' LIMIT 1),      (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),  63.50, 11.43,  74.93,'Efectivo','Completada', NOW() - INTERVAL 3 DAY),
+ ('B001-00105',(SELECT id FROM clientes WHERE nombre='Empresa ABC SAC' LIMIT 1),      (SELECT id FROM usuarios WHERE email='midanale12@gmail.com'),    179.00, 32.22, 211.22,'Tarjeta','Completada',  NOW() - INTERVAL 4 DAY),
+ ('B001-00106',(SELECT id FROM clientes WHERE nombre='Constructora Andina SAC' LIMIT 1),(SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),70.00, 12.60,  82.60,'Efectivo','Completada', NOW() - INTERVAL 5 DAY),
+ ('B001-00107',(SELECT id FROM clientes WHERE nombre='Cliente General' LIMIT 1),      (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),      84.00, 15.12,  99.12,'Efectivo','Completada', NOW() - INTERVAL 6 DAY),
+ ('B001-00108',(SELECT id FROM clientes WHERE nombre='Miguel Ángel Soto' LIMIT 1),    (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'), 229.00, 41.22, 270.22,'Tarjeta','Completada',  NOW()),
+ ('B001-00109',(SELECT id FROM clientes WHERE nombre='Rosa Huamán' LIMIT 1),          (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),     148.00, 26.64, 174.64,'Efectivo','Completada', NOW() - INTERVAL 1 DAY),
+ ('B001-00110',(SELECT id FROM clientes WHERE nombre='María García' LIMIT 1),         (SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),  28.00,  5.04,  33.04,'Yape','Anulada',       NOW() - INTERVAL 2 DAY);
 
 -- ── DETALLE DE CADA VENTA ──
 INSERT INTO detalle_venta (venta_id, producto_id, cantidad, precio_unitario, subtotal) VALUES
@@ -565,9 +581,9 @@ INSERT INTO detalle_venta (venta_id, producto_id, cantidad, precio_unitario, sub
 
 -- ── COMPRAS (cabecera) ──
 INSERT INTO compras (numero_orden, proveedor_id, usuario_id, subtotal, igv, total, tipo_pago, estado, fecha_esperada, observaciones, created_at) VALUES
- ('OC-00010',(SELECT id FROM proveedores WHERE empresa='Distribuidora Ferretera SAC' LIMIT 1),(SELECT id FROM usuarios WHERE email='admin@tienda.com'),  280.00, 50.40, 330.40,'Transferencia','Recibida', CURDATE()-INTERVAL 2 DAY,'Reposición de herramientas', NOW()-INTERVAL 4 DAY),
- ('OC-00011',(SELECT id FROM proveedores WHERE empresa='Aceros del Perú SAC' LIMIT 1),        (SELECT id FROM usuarios WHERE email='almacen@tienda.com'),425.00, 76.50, 501.50,'Credito','Pendiente',      CURDATE()+INTERVAL 5 DAY,'Pedido de taladros',        NOW()-INTERVAL 1 DAY),
- ('OC-00012',(SELECT id FROM proveedores WHERE empresa='Pinturas Tricolor EIRL' LIMIT 1),     (SELECT id FROM usuarios WHERE email='admin@tienda.com'),  590.00,106.20, 696.20,'Efectivo','Recibida',       CURDATE()-INTERVAL 1 DAY,'Compra de pinturas',        NOW()-INTERVAL 2 DAY);
+ ('OC-00010',(SELECT id FROM proveedores WHERE empresa='Distribuidora Ferretera SAC' LIMIT 1),(SELECT id FROM usuarios WHERE email='midanale12@gmail.com'),  280.00, 50.40, 330.40,'Transferencia','Recibida', CURDATE()-INTERVAL 2 DAY,'Reposición de herramientas', NOW()-INTERVAL 4 DAY),
+ ('OC-00011',(SELECT id FROM proveedores WHERE empresa='Aceros del Perú SAC' LIMIT 1),        (SELECT id FROM usuarios WHERE email='aalessandro.baca57@gmail.com'),425.00, 76.50, 501.50,'Credito','Pendiente',      CURDATE()+INTERVAL 5 DAY,'Pedido de taladros',        NOW()-INTERVAL 1 DAY),
+ ('OC-00012',(SELECT id FROM proveedores WHERE empresa='Pinturas Tricolor EIRL' LIMIT 1),     (SELECT id FROM usuarios WHERE email='midanale12@gmail.com'),  590.00,106.20, 696.20,'Efectivo','Recibida',       CURDATE()-INTERVAL 1 DAY,'Compra de pinturas',        NOW()-INTERVAL 2 DAY);
 
 INSERT INTO detalle_compra (compra_id, producto_id, cantidad, precio_unitario, subtotal) VALUES
  ((SELECT id FROM compras WHERE numero_orden='OC-00010'),(SELECT id FROM productos WHERE codigo='PROD-001' LIMIT 1),10,18.00,180.00),
@@ -578,9 +594,9 @@ INSERT INTO detalle_compra (compra_id, producto_id, cantidad, precio_unitario, s
 
 -- ── DEVOLUCIONES (notas de crédito) + detalle ──
 INSERT INTO devoluciones (numero_nota, venta_id, usuario_id, motivo, monto_reembolso, tipo_reembolso, created_at) VALUES
- ('NC-00010',(SELECT id FROM ventas WHERE numero_comprobante='B001-00100'),(SELECT id FROM usuarios WHERE email='recepcion@tienda.com'),'Producto defectuoso',       35.00,'Efectivo',   NOW()-INTERVAL 1 DAY),
- ('NC-00011',(SELECT id FROM ventas WHERE numero_comprobante='B001-00102'),(SELECT id FROM usuarios WHERE email='sofia@tienda.com'),    'Cliente pidió menos cantidad',18.00,'NotaCredito',NOW()-INTERVAL 1 DAY),
- ('NC-00012',(SELECT id FROM ventas WHERE numero_comprobante='B001-00104'),(SELECT id FROM usuarios WHERE email='recepcion@tienda.com'),'Cambio de medida',           8.50,'Tarjeta',    NOW()-INTERVAL 2 DAY);
+ ('NC-00010',(SELECT id FROM ventas WHERE numero_comprobante='B001-00100'),(SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),'Producto defectuoso',       35.00,'Efectivo',   NOW()-INTERVAL 1 DAY),
+ ('NC-00011',(SELECT id FROM ventas WHERE numero_comprobante='B001-00102'),(SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),    'Cliente pidió menos cantidad',18.00,'NotaCredito',NOW()-INTERVAL 1 DAY),
+ ('NC-00012',(SELECT id FROM ventas WHERE numero_comprobante='B001-00104'),(SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),'Cambio de medida',           8.50,'Tarjeta',    NOW()-INTERVAL 2 DAY);
 
 INSERT INTO detalle_devolucion (devolucion_id, producto_id, cantidad, precio_unitario, subtotal) VALUES
  ((SELECT id FROM devoluciones WHERE numero_nota='NC-00010'),(SELECT id FROM productos WHERE codigo='PROD-001' LIMIT 1),1,35.00,35.00),
@@ -589,8 +605,8 @@ INSERT INTO detalle_devolucion (devolucion_id, producto_id, cantidad, precio_uni
 
 -- ── CAJA (turnos cerrados) + movimientos ──
 INSERT INTO caja (usuario_id, monto_inicial, monto_final, total_ventas, total_egresos, estado, observaciones, apertura, cierre) VALUES
- ((SELECT id FROM usuarios WHERE email='admin@tienda.com'),    200.00, 980.00, 850.00, 70.00,'Cerrada','Turno martes',  NOW()-INTERVAL 3 DAY,NOW()-INTERVAL 3 DAY + INTERVAL 10 HOUR),
- ((SELECT id FROM usuarios WHERE email='sofia@tienda.com'),    150.00, 620.00, 520.00, 50.00,'Cerrada','Turno jueves',  NOW()-INTERVAL 1 DAY,NOW()-INTERVAL 1 DAY + INTERVAL 10 HOUR);
+ ((SELECT id FROM usuarios WHERE email='midanale12@gmail.com'),    200.00, 980.00, 850.00, 70.00,'Cerrada','Turno martes',  NOW()-INTERVAL 3 DAY,NOW()-INTERVAL 3 DAY + INTERVAL 10 HOUR),
+ ((SELECT id FROM usuarios WHERE email='bacadany58@gmail.com'),    150.00, 620.00, 520.00, 50.00,'Cerrada','Turno jueves',  NOW()-INTERVAL 1 DAY,NOW()-INTERVAL 1 DAY + INTERVAL 10 HOUR);
 
 INSERT INTO movimientos_caja (caja_id, tipo, monto, descripcion) VALUES
  ((SELECT id FROM caja WHERE observaciones='Turno martes' LIMIT 1),'Egreso',  50.00,'Compra de útiles de limpieza'),
@@ -600,6 +616,6 @@ INSERT INTO movimientos_caja (caja_id, tipo, monto, descripcion) VALUES
 
 -- ── Algunos movimientos de inventario (para la pestaña Movimientos de Stock) ──
 INSERT INTO inventario (producto_id, usuario_id, tipo, cantidad, stock_antes, stock_despues, motivo, created_at) VALUES
- ((SELECT id FROM productos WHERE codigo='PROD-006' LIMIT 1),(SELECT id FROM usuarios WHERE email='almacen@tienda.com'),'Ajuste', 5,100,105,'Conteo físico', NOW()-INTERVAL 2 DAY),
- ((SELECT id FROM productos WHERE codigo='PROD-013' LIMIT 1),(SELECT id FROM usuarios WHERE email='almacen@tienda.com'),'Entrada',5, 15, 20,'Compra OC-00011',NOW()-INTERVAL 1 DAY),
- ((SELECT id FROM productos WHERE codigo='PROD-032' LIMIT 1),(SELECT id FROM usuarios WHERE email='almacen@tienda.com'),'Entrada',15,25, 40,'Compra OC-00012',NOW()-INTERVAL 2 DAY);
+ ((SELECT id FROM productos WHERE codigo='PROD-006' LIMIT 1),(SELECT id FROM usuarios WHERE email='aalessandro.baca57@gmail.com'),'Ajuste', 5,100,105,'Conteo físico', NOW()-INTERVAL 2 DAY),
+ ((SELECT id FROM productos WHERE codigo='PROD-013' LIMIT 1),(SELECT id FROM usuarios WHERE email='aalessandro.baca57@gmail.com'),'Entrada',5, 15, 20,'Compra OC-00011',NOW()-INTERVAL 1 DAY),
+ ((SELECT id FROM productos WHERE codigo='PROD-032' LIMIT 1),(SELECT id FROM usuarios WHERE email='aalessandro.baca57@gmail.com'),'Entrada',15,25, 40,'Compra OC-00012',NOW()-INTERVAL 2 DAY);
