@@ -27,6 +27,8 @@ export class LoginComponent {
   cargando = false;
   challengeToken = '';
   correoVerificacion = '';
+  segundosReenvio = 0;
+  private temporizadorReenvio?: ReturnType<typeof setInterval>;
 
   constructor(private authService: AuthService, private router: Router) {}
 
@@ -47,6 +49,7 @@ export class LoginComponent {
           this.codigo = '';
           this.pantalla = 'mfa';
           this.mensaje = 'Hemos enviado un código de 6 dígitos al correo registrado.';
+          this.iniciarTemporizadorReenvio();
         },
         error: err => {
           this.cargando = false;
@@ -72,6 +75,41 @@ export class LoginComponent {
         this.mostrarError(err);
       }
     });
+  }
+
+  reenviarCodigo(): void {
+    if (this.cargando || this.segundosReenvio > 0 || !this.challengeToken) return;
+
+    this.cargando = true;
+    this.error = '';
+    this.codigo = '';
+
+    this.authService.resendMfa(this.challengeToken).pipe(timeout(8000)).subscribe({
+      next: res => {
+        this.cargando = false;
+        this.challengeToken = res.challengeToken;
+        this.correoVerificacion = res.email;
+        this.mensaje = 'Se envió un nuevo código. El código anterior ya no es válido.';
+        this.iniciarTemporizadorReenvio();
+      },
+      error: err => {
+        this.cargando = false;
+        this.mostrarError(err);
+      }
+    });
+  }
+
+  private iniciarTemporizadorReenvio(): void {
+    if (this.temporizadorReenvio) clearInterval(this.temporizadorReenvio);
+    this.segundosReenvio = 30;
+
+    this.temporizadorReenvio = setInterval(() => {
+      this.segundosReenvio--;
+      if (this.segundosReenvio <= 0 && this.temporizadorReenvio) {
+        clearInterval(this.temporizadorReenvio);
+        this.temporizadorReenvio = undefined;
+      }
+    }, 1000);
   }
 
   iniciarRecuperacion(): void {
@@ -141,6 +179,9 @@ export class LoginComponent {
     this.mensaje = '';
     this.codigo = '';
     this.challengeToken = '';
+    if (this.temporizadorReenvio) clearInterval(this.temporizadorReenvio);
+    this.temporizadorReenvio = undefined;
+    this.segundosReenvio = 0;
   }
 
   toggleMostrarPassword(): void { this.mostrarPassword = !this.mostrarPassword; }
