@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -30,7 +30,7 @@ export class LoginComponent {
   segundosReenvio = 0;
   private temporizadorReenvio?: ReturnType<typeof setInterval>;
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(private authService: AuthService, private router: Router, private cdr: ChangeDetectorRef) {}
 
   ingresar(): void {
     if (!this.email.trim() || !this.password.trim()) {
@@ -50,6 +50,7 @@ export class LoginComponent {
           this.pantalla = 'mfa';
           this.mensaje = 'Hemos enviado un código de 6 dígitos al correo registrado.';
           this.iniciarTemporizadorReenvio();
+          this.cdr.detectChanges();
         },
         error: err => {
           this.cargando = false;
@@ -69,6 +70,7 @@ export class LoginComponent {
       next: () => {
         this.cargando = false;
         this.router.navigate(['/dashboard']);
+        this.cdr.detectChanges();
       },
       error: err => {
         this.cargando = false;
@@ -91,6 +93,7 @@ export class LoginComponent {
         this.correoVerificacion = res.email;
         this.mensaje = 'Se envió un nuevo código. El código anterior ya no es válido.';
         this.iniciarTemporizadorReenvio();
+        this.cdr.detectChanges();
       },
       error: err => {
         this.cargando = false;
@@ -109,6 +112,7 @@ export class LoginComponent {
         clearInterval(this.temporizadorReenvio);
         this.temporizadorReenvio = undefined;
       }
+      this.cdr.detectChanges();
     }, 1000);
   }
 
