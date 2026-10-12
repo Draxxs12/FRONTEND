@@ -1,0 +1,1250 @@
+From 595fc285ae3fb5c156272ee99e06415f1cbbd107 Mon Sep 17 00:00:00 2001
+From: Pruebas Sprint 2 <pruebas@local>
+Date: Mon, 12 Oct 2026 19:46:29 +0000
+Subject: [PATCH] test: pruebas Sprint 2 (tandas 1 y 2)
+
+---
+ .../categorias/categorias.component.spec.ts   | 175 ++++++++++++
+ .../dashboard/dashboard.graficos.spec.ts      | 132 +++++++++
+ .../devoluciones.component.spec.ts            | 159 +++++++++++
+ src/app/Pages/layout/permisos.spec.ts         | 152 ++++++++++
+ .../productos/productos.component.spec.ts     | 200 +++++++++++++
+ .../punto-venta/punto-venta.catalogo.spec.ts  | 269 ++++++++++++++++++
+ src/app/Pages/ventas/ventas.component.spec.ts |  96 +++++++
+ 7 files changed, 1183 insertions(+)
+ create mode 100644 src/app/Pages/categorias/categorias.component.spec.ts
+ create mode 100644 src/app/Pages/dashboard/dashboard.graficos.spec.ts
+ create mode 100644 src/app/Pages/devoluciones/devoluciones.component.spec.ts
+ create mode 100644 src/app/Pages/layout/permisos.spec.ts
+ create mode 100644 src/app/Pages/productos/productos.component.spec.ts
+ create mode 100644 src/app/Pages/punto-venta/punto-venta.catalogo.spec.ts
+ create mode 100644 src/app/Pages/ventas/ventas.component.spec.ts
+
+diff --git a/src/app/Pages/categorias/categorias.component.spec.ts b/src/app/Pages/categorias/categorias.component.spec.ts
+new file mode 100644
+index 0000000..0895544
+--- /dev/null
++++ b/src/app/Pages/categorias/categorias.component.spec.ts
+@@ -0,0 +1,175 @@
++import { of, throwError } from 'rxjs';
++import { CategoriasComponent } from './categorias.component';
++
++const prod = (id: number, catId: number | null) => ({
++  id, codigo: 'C' + id, nombre: 'P' + id,
++  categoria: catId == null ? null : { id: catId, nombre: 'Cat' + catId },
++  precioCompra: 1, precioVenta: 2, stock: 1, stockMinimo: 1, activo: true
++});
++
++function crear(categorias: any[] = [], productos: any[] = []) {
++  const categoriaService: any = {
++    listar: vi.fn(() => of(categorias)),
++    crear: vi.fn(() => of({})),
++    actualizar: vi.fn(() => of({})),
++    eliminar: vi.fn(() => of({}))
++  };
++  const productoService: any = { listar: vi.fn(() => of(productos)) };
++  const cdr: any = { detectChanges: vi.fn() };
++  const c = new CategoriasComponent(categoriaService, productoService, cdr);
++  return { c, categoriaService, productoService };
++}
++
++beforeEach(() => { vi.useFakeTimers(); });
++afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
++
++describe('HU-S2-18 Listar categorías', () => {
++  it('al abrir carga todas las categorías y los productos', () => {
++    const { c } = crear([{ id: 1, nombre: 'A' }, { id: 2, nombre: 'B' }], [prod(1, 1)]);
++    c.ngOnInit();
++    expect(c.categorias.length).toBe(2);
++    expect(c.productos.length).toBe(1);
++  });
++  it('sin categorías el listado queda vacío', () => {
++    const { c } = crear([]); c.ngOnInit();
++    expect(c.categorias).toEqual([]);
++  });
++  it('productosDe devuelve solo los productos de esa categoría', () => {
++    const { c } = crear([], [prod(1, 1), prod(2, 2), prod(3, 1), prod(4, null)]); c.ngOnInit();
++    expect(c.productosDe(1).map(p => p.id)).toEqual([1, 3]);
++  });
++  it('productosDe sin id devuelve lista vacía', () => {
++    const { c } = crear([], [prod(1, 1)]); c.ngOnInit();
++    expect(c.productosDe(undefined)).toEqual([]);
++  });
++  it('toggleExpandir abre una categoría y la cierra al repetir', () => {
++    const { c } = crear();
++    c.toggleExpandir(3); expect(c.expandida).toBe(3);
++    c.toggleExpandir(3); expect(c.expandida).toBeNull();
++  });
++  it('al expandir otra categoría se cierra la anterior', () => {
++    const { c } = crear();
++    c.toggleExpandir(1); c.toggleExpandir(2);
++    expect(c.expandida).toBe(2);
++  });
++});
++
++describe('HU-S2-19 Registrar nueva categoría', () => {
++  it('abrirNuevo muestra el modal con el formulario vacío', () => {
++    const { c } = crear(); c.form = { id: 4, nombre: 'viejo' }; c.abrirNuevo();
++    expect(c.mostrarModal).toBe(true);
++    expect(c.modoEdicion).toBe(false);
++    expect(c.form).toEqual({ nombre: '' });
++  });
++  it('nombre vacío no guarda y avisa', () => {
++    const { c, categoriaService } = crear(); c.abrirNuevo(); c.form.nombre = '';
++    c.guardar();
++    expect(categoriaService.crear).not.toHaveBeenCalled();
++    expect(c.mensaje).toBe('El nombre es obligatorio.');
++    expect(c.esError).toBe(true);
++  });
++  it('nombre con solo espacios no guarda (valor límite)', () => {
++    const { c, categoriaService } = crear(); c.abrirNuevo(); c.form.nombre = '   ';
++    c.guardar();
++    expect(categoriaService.crear).not.toHaveBeenCalled();
++  });
++  it('nombre de 1 carácter es válido (valor límite)', () => {
++    const { c, categoriaService } = crear(); c.abrirNuevo(); c.form.nombre = 'A';
++    c.guardar();
++    expect(categoriaService.crear).toHaveBeenCalledWith({ nombre: 'A' });
++  });
++  it('categoría válida: crea, cierra el modal, recarga y confirma', () => {
++    const { c, categoriaService } = crear(); c.abrirNuevo(); c.form.nombre = 'Pinturas';
++    const cargas = categoriaService.listar.mock.calls.length;
++    c.guardar();
++    expect(categoriaService.crear).toHaveBeenCalledWith({ nombre: 'Pinturas' });
++    expect(categoriaService.actualizar).not.toHaveBeenCalled();
++    expect(c.mostrarModal).toBe(false);
++    expect(c.mensaje).toBe('Categoría guardada.');
++    expect(c.esError).toBe(false);
++    expect(categoriaService.listar.mock.calls.length).toBe(cargas + 1);
++  });
++  it('si el servidor falla (por ejemplo nombre repetido) muestra el error', () => {
++    const { c, categoriaService } = crear(); c.abrirNuevo(); c.form.nombre = 'Pinturas';
++    categoriaService.crear.mockReturnValue(throwError(() => ({ status: 500 })));
++    c.guardar();
++    expect(c.esError).toBe(true);
++    expect(c.mensaje).toBe('Error al guardar.');
++  });
++  it('el mensaje de confirmación desaparece a los 4 segundos (valor límite)', () => {
++    const { c } = crear(); c.abrirNuevo(); c.form.nombre = 'Pinturas';
++    c.guardar();
++    vi.advanceTimersByTime(3999); expect(c.mensaje).not.toBe('');
++    vi.advanceTimersByTime(1);    expect(c.mensaje).toBe('');
++  });
++
++  // ROJO ESPERADO: la pantalla valida con trim() pero luego envía el nombre sin recortar,
++  // así que "  Pinturas " queda guardado con espacios. Corrección sugerida: enviar this.form.nombre.trim().
++  it('ROJO esperado: el nombre se guarda sin espacios sobrantes', () => {
++    const { c, categoriaService } = crear(); c.abrirNuevo(); c.form.nombre = '  Pinturas ';
++    c.guardar();
++    expect(categoriaService.crear).toHaveBeenCalledWith({ nombre: 'Pinturas' });
++  });
++});
++
++describe('HU-S2-20 Editar categoría', () => {
++  it('abrirEditar carga una copia de la categoría en el formulario', () => {
++    const { c } = crear(); const original = { id: 2, nombre: 'Pinturas' };
++    c.abrirEditar(original);
++    expect(c.modoEdicion).toBe(true);
++    expect(c.form).toEqual(original);
++    expect(c.form).not.toBe(original);          // es copia: cancelar no altera el listado
++  });
++  it('guardar en edición actualiza la categoría, no crea otra', () => {
++    const { c, categoriaService } = crear(); c.abrirEditar({ id: 2, nombre: 'Pinturas' });
++    c.form.nombre = 'Pinturas y barnices';
++    c.guardar();
++    expect(categoriaService.actualizar).toHaveBeenCalledWith(2, { id: 2, nombre: 'Pinturas y barnices' });
++    expect(categoriaService.crear).not.toHaveBeenCalled();
++    expect(c.mensaje).toBe('Categoría guardada.');
++  });
++  it('editar dejando el nombre vacío se rechaza', () => {
++    const { c, categoriaService } = crear(); c.abrirEditar({ id: 2, nombre: 'Pinturas' });
++    c.form.nombre = '';
++    c.guardar();
++    expect(categoriaService.actualizar).not.toHaveBeenCalled();
++    expect(c.mensaje).toBe('El nombre es obligatorio.');
++  });
++  it('cerrar oculta el modal sin guardar', () => {
++    const { c, categoriaService } = crear(); c.abrirEditar({ id: 2, nombre: 'X' });
++    c.cerrar();
++    expect(c.mostrarModal).toBe(false);
++    expect(categoriaService.actualizar).not.toHaveBeenCalled();
++  });
++});
++
++describe('H0054 Eliminar categoría', () => {
++  it('si se cancela la confirmación no elimina', () => {
++    vi.stubGlobal('confirm', () => false);
++    const { c, categoriaService } = crear();
++    c.eliminar({ id: 1, nombre: 'A' });
++    expect(categoriaService.eliminar).not.toHaveBeenCalled();
++  });
++  it('confirmado: elimina y recarga', () => {
++    vi.stubGlobal('confirm', () => true);
++    const { c, categoriaService } = crear();
++    const cargas = categoriaService.listar.mock.calls.length;
++    c.eliminar({ id: 1, nombre: 'A' });
++    expect(categoriaService.eliminar).toHaveBeenCalledWith(1);
++    expect(categoriaService.listar.mock.calls.length).toBe(cargas + 1);
++  });
++  it('si tiene productos asociados avisa que no se pudo eliminar', () => {
++    vi.stubGlobal('confirm', () => true);
++    const { c, categoriaService } = crear();
++    categoriaService.eliminar.mockReturnValue(throwError(() => ({ status: 409 })));
++    c.eliminar({ id: 1, nombre: 'A' });
++    expect(c.esError).toBe(true);
++    expect(c.mensaje).toContain('No se pudo eliminar');
++  });
++  it('una categoría sin id no se intenta eliminar', () => {
++    vi.stubGlobal('confirm', () => true);
++    const { c, categoriaService } = crear();
++    c.eliminar({ nombre: 'sin id' });
++    expect(categoriaService.eliminar).not.toHaveBeenCalled();
++  });
++});
+diff --git a/src/app/Pages/dashboard/dashboard.graficos.spec.ts b/src/app/Pages/dashboard/dashboard.graficos.spec.ts
+new file mode 100644
+index 0000000..6e91de7
+--- /dev/null
++++ b/src/app/Pages/dashboard/dashboard.graficos.spec.ts
+@@ -0,0 +1,132 @@
++import { of } from 'rxjs';
++import { DashboardComponent } from './dashboard.component';
++
++const p2 = (n: number) => String(n).padStart(2, '0');
++const fecha = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
++const haceDias = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return fecha(d); };
++
++interface Datos { productos?: any[]; clientes?: any[]; ventas?: any[]; compras?: any[]; }
++
++function crear(datos: Datos = {}) {
++  const ps: any = { listar: vi.fn(() => of(datos.productos ?? [])) };
++  const cs: any = { getAll: vi.fn(() => of(datos.clientes ?? [])) };
++  const vs: any = { listar: vi.fn(() => of(datos.ventas ?? [])), topClientes: vi.fn(() => of([])) };
++  const cps: any = { getAll: vi.fn(() => of(datos.compras ?? [])) };
++  const cdr: any = { detectChanges: vi.fn() };
++  const c = new DashboardComponent(ps, cs, vs, cps, cdr);
++  c.ngOnInit();
++  return c;
++}
++
++const serie = (o: any): any[] => (o.series as any[])[0].data;
++
++describe('H0020 KPIs sin datos (CP-002)', () => {
++  it('con todo vacío los indicadores quedan en 0 y no hay error', () => {
++    const c = crear();
++    expect(c.totalProductos).toBe(0);
++    expect(c.totalStockBajo).toBe(0);
++    expect(c.totalClientes).toBe(0);
++    expect(c.ventasHoy).toBe(0);
++  });
++});
++
++describe('H0021 Tendencia de ventas semanal (CP-003, CP-004)', () => {
++  it('la serie tiene 7 días y el último es hoy', () => {
++    const c = crear({ ventas: [
++      { estado: 'Completada', total: 100, createdAt: haceDias(0) + 'T09:00:00' },
++      { estado: 'Completada', total: 40.5, createdAt: haceDias(0) + 'T18:00:00' },
++    ]});
++    const datos = serie(c.mainLineChartOptions);
++    expect(datos.length).toBe(7);
++    expect(datos[6]).toBe(140.5);
++  });
++  it('un día sin ventas aparece con 0', () => {
++    const c = crear({ ventas: [{ estado: 'Completada', total: 80, createdAt: haceDias(2) + 'T10:00:00' }] });
++    const datos = serie(c.mainLineChartOptions);
++    expect(datos[4]).toBe(80);   // hace 2 días
++    expect(datos[5]).toBe(0);    // ayer, sin ventas
++    expect(datos[6]).toBe(0);    // hoy, sin ventas
++  });
++  it('las ventas anuladas no cuentan', () => {
++    const c = crear({ ventas: [
++      { estado: 'Anulada', total: 999, createdAt: haceDias(0) + 'T10:00:00' },
++      { estado: 'Completada', total: 10, createdAt: haceDias(0) + 'T11:00:00' },
++    ]});
++    expect(serie(c.mainLineChartOptions)[6]).toBe(10);
++  });
++  it('las ventas de hace más de 7 días quedan fuera', () => {
++    const c = crear({ ventas: [{ estado: 'Completada', total: 500, createdAt: haceDias(7) + 'T10:00:00' }] });
++    expect(serie(c.mainLineChartOptions).every((v: number) => v === 0)).toBe(true);
++  });
++});
++
++describe('H0022 Top proveedores (CP-005, CP-006, CP-007)', () => {
++  const compra = (empresa: string, total: number) => ({ proveedor: { empresa }, total });
++
++  it('suma las compras por proveedor y ordena de mayor a menor', () => {
++    const c = crear({ compras: [compra('A', 100), compra('B', 500), compra('A', 150)] });
++    const nombres = (c.proveedoresChartOptions.yAxis as any).data;
++    const valores = serie(c.proveedoresChartOptions).map((d: any) => d.value);
++    expect(nombres).toEqual(['B', 'A']);
++    expect(valores).toEqual([500, 250]);
++  });
++  it('muestra como máximo 5 proveedores (valor límite)', () => {
++    const compras = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((n, i) => compra(n, (i + 1) * 100));
++    const c = crear({ compras });
++    expect((c.proveedoresChartOptions.yAxis as any).data).toEqual(['G', 'F', 'E', 'D', 'C']);
++  });
++  it('exactamente 5 proveedores se muestran todos', () => {
++    const c = crear({ compras: ['A', 'B', 'C', 'D', 'E'].map((n, i) => compra(n, (i + 1) * 10)) });
++    expect((c.proveedoresChartOptions.yAxis as any).data.length).toBe(5);
++  });
++  it('sin compras la lista queda con un aviso y valor 0, sin error', () => {
++    const c = crear();
++    expect((c.proveedoresChartOptions.yAxis as any).data).toEqual(['Sin compras registradas']);
++    expect(serie(c.proveedoresChartOptions)[0].value).toBe(0);
++  });
++  it('ignora las compras sin proveedor o sin total', () => {
++    const c = crear({ compras: [{ proveedor: null, total: 100 }, compra('A', 0), compra('B', 70)] });
++    expect((c.proveedoresChartOptions.yAxis as any).data).toEqual(['B']);
++  });
++});
++
++describe('H0023 Productos por categoría (CP-008, CP-009)', () => {
++  const prod = (id: number, cat: string | null, activo = true) =>
++    ({ id, activo, stock: 10, stockMinimo: 1, categoria: cat ? { nombre: cat } : null });
++
++  it('cuenta los productos activos de cada categoría', () => {
++    const c = crear({ productos: [prod(1, 'Herramientas'), prod(2, 'Herramientas'), prod(3, 'Pinturas')] });
++    expect((c.barChartOptions.xAxis as any).data).toEqual(['Herramientas', 'Pinturas']);
++    expect(serie(c.barChartOptions)).toEqual([2, 1]);
++  });
++  it('los productos inactivos no cuentan', () => {
++    const c = crear({ productos: [prod(1, 'Herramientas'), prod(2, 'Herramientas', false)] });
++    expect(serie(c.barChartOptions)).toEqual([1]);
++  });
++  it('un producto sin categoría se omite (regla actual)', () => {
++    const c = crear({ productos: [prod(1, null), prod(2, 'Pinturas')] });
++    expect((c.barChartOptions.xAxis as any).data).toEqual(['Pinturas']);
++  });
++  it('sin productos muestra "Sin productos" con valor 0', () => {
++    const c = crear();
++    expect((c.barChartOptions.xAxis as any).data).toEqual(['Sin productos']);
++    expect(serie(c.barChartOptions)).toEqual([0]);
++  });
++});
++
++describe('H0025 Evolución de ventas y compras (CP-013, CP-014)', () => {
++  it('la mini serie de compras tiene 4 días y el último es hoy', () => {
++    const c = crear({ compras: [{ proveedor: { empresa: 'A' }, total: 300, createdAt: haceDias(0) + 'T10:00:00' }] });
++    const datos = serie(c.miniLineComprasOptions);
++    expect(datos.length).toBe(4);
++    expect(datos[3]).toBe(300);
++  });
++  it('un periodo sin compras marca 0', () => {
++    const c = crear({ compras: [{ proveedor: { empresa: 'A' }, total: 300, createdAt: haceDias(3) + 'T10:00:00' }] });
++    expect(serie(c.miniLineComprasOptions)).toEqual([300, 0, 0, 0]);
++  });
++  it('la mini serie de ventas toma los últimos 4 días de la semana', () => {
++    const c = crear({ ventas: [{ estado: 'Completada', total: 25, createdAt: haceDias(1) + 'T10:00:00' }] });
++    expect(serie(c.miniLineVentasOptions)).toEqual([0, 0, 25, 0]);
++  });
++});
+diff --git a/src/app/Pages/devoluciones/devoluciones.component.spec.ts b/src/app/Pages/devoluciones/devoluciones.component.spec.ts
+new file mode 100644
+index 0000000..620242a
+--- /dev/null
++++ b/src/app/Pages/devoluciones/devoluciones.component.spec.ts
+@@ -0,0 +1,159 @@
++import { of, throwError } from 'rxjs';
++import { DevolucionesComponent } from './devoluciones.component';
++
++const venta = (id: number, estado: 'Completada' | 'Anulada' = 'Completada') => ({
++  id, numeroComprobante: `B001-${id}`, estado, total: 100, cliente: null, usuario: { id: 1, nombre: 'u' },
++  subtotal: 0, igv: 0, tipoPago: 'Efectivo', createdAt: '2026-10-01T10:00:00'
++});
++const linea = (productoId: number, cantidad: number, precio: number) => ({
++  id: productoId, producto: { id: productoId, nombre: 'P' + productoId, codigo: 'C' + productoId },
++  cantidad, precioUnitario: precio, subtotal: cantidad * precio
++});
++
++function crear(opts: { devoluciones?: any[]; ventas?: any[]; detalle?: any[] } = {}) {
++  const devolucionService: any = {
++    listar: vi.fn(() => of(opts.devoluciones ?? [])),
++    crear: vi.fn(() => of({}))
++  };
++  const ventaService: any = {
++    listar: vi.fn(() => of(opts.ventas ?? [])),
++    obtenerDetalle: vi.fn(() => of(opts.detalle ?? []))
++  };
++  const auth: any = { getUsuarioId: vi.fn(() => 7) };
++  const cdr: any = { detectChanges: vi.fn() };
++  const c = new DevolucionesComponent(devolucionService, ventaService, auth, cdr);
++  return { c, devolucionService, ventaService, auth };
++}
++
++beforeEach(() => { vi.useFakeTimers(); });
++afterEach(() => { vi.useRealTimers(); });
++
++describe('HU-S2-14 Listar devoluciones registradas', () => {
++  it('al abrir carga todas las devoluciones del servidor', () => {
++    const { c } = crear({ devoluciones: [{ id: 1, numeroNota: 'NC-001' }, { id: 2, numeroNota: 'NC-002' }] });
++    c.ngOnInit();
++    expect(c.devoluciones.length).toBe(2);
++  });
++  it('sin devoluciones el listado queda vacío sin error', () => {
++    const { c } = crear({ devoluciones: [] });
++    c.ngOnInit();
++    expect(c.devoluciones).toEqual([]);
++    expect(c.esError).toBe(false);
++  });
++  it('para devolver solo ofrece ventas Completadas (excluye las Anuladas)', () => {
++    const { c } = crear({ ventas: [venta(1), venta(2, 'Anulada'), venta(3)] });
++    c.ngOnInit();
++    expect(c.ventas.map(v => v.id)).toEqual([1, 3]);
++  });
++});
++
++describe('HU-S2-13 Registrar devolución (pantalla)', () => {
++  it('abrirNueva limpia el formulario y usa Efectivo por defecto', () => {
++    const { c } = crear();
++    c.motivo = 'viejo'; c.tipoReembolso = 'Tarjeta'; c.ventaSelId = 5;
++    c.abrirNueva();
++    expect(c.mostrarModal).toBe(true);
++    expect(c.ventaSelId).toBeNull();
++    expect(c.motivo).toBe('');
++    expect(c.tipoReembolso).toBe('Efectivo');
++    expect(c.lineas).toEqual([]);
++  });
++  it('sin venta elegida no hay líneas', () => {
++    const { c, ventaService } = crear();
++    c.ventaSelId = null; c.cargarDetalle();
++    expect(c.lineas).toEqual([]);
++    expect(ventaService.obtenerDetalle).not.toHaveBeenCalled();
++  });
++  it('al elegir una venta carga su detalle con cantidad a devolver en 0', () => {
++    const { c, ventaService } = crear({ detalle: [linea(1, 3, 10), linea(2, 1, 50)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    expect(ventaService.obtenerDetalle).toHaveBeenCalledWith(9);
++    expect(c.lineas.length).toBe(2);
++    expect(c.lineas.every(l => l.devolver === 0)).toBe(true);
++  });
++  it('totalReembolso es 0 mientras no se indique ninguna cantidad', () => {
++    const { c } = crear({ detalle: [linea(1, 3, 10)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    expect(c.totalReembolso).toBe(0);
++  });
++  it('totalReembolso suma cantidad x precio solo de las líneas a devolver', () => {
++    const { c } = crear({ detalle: [linea(1, 3, 10), linea(2, 4, 50)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    c.lineas[0].devolver = 2;      // 20
++    c.lineas[1].devolver = 0;      // no cuenta
++    expect(c.totalReembolso).toBe(20);
++  });
++  it('una cantidad negativa no resta del reembolso', () => {
++    const { c } = crear({ detalle: [linea(1, 3, 10)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    c.lineas[0].devolver = -5;
++    expect(c.totalReembolso).toBe(0);
++  });
++  it('sin venta seleccionada no registra y avisa', () => {
++    const { c, devolucionService } = crear();
++    c.ventaSelId = null;
++    c.registrar();
++    expect(devolucionService.crear).not.toHaveBeenCalled();
++    expect(c.esError).toBe(true);
++    expect(c.mensaje).toBe('Selecciona una venta e indica cantidades a devolver.');
++  });
++  it('con todas las cantidades en 0 no registra (valor límite)', () => {
++    const { c, devolucionService } = crear({ detalle: [linea(1, 3, 10)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    c.registrar();
++    expect(devolucionService.crear).not.toHaveBeenCalled();
++  });
++  it('envía solo las líneas con cantidad > 0, con usuario, venta, motivo y tipo de reembolso', () => {
++    const { c, devolucionService } = crear({ detalle: [linea(1, 3, 10), linea(2, 4, 50)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    c.lineas[0].devolver = 1; c.motivo = 'Defectuoso'; c.tipoReembolso = 'Tarjeta';
++    c.registrar();
++    expect(devolucionService.crear).toHaveBeenCalledWith({
++      usuarioId: 7, ventaId: 9, motivo: 'Defectuoso', tipoReembolso: 'Tarjeta',
++      detalles: [{ producto: { id: 1 }, cantidad: 1, precioUnitario: 10 }]
++    });
++  });
++  it('devolver exactamente lo vendido se envía (valor límite)', () => {
++    const { c, devolucionService } = crear({ detalle: [linea(1, 3, 10)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    c.lineas[0].devolver = 3;
++    c.registrar();
++    expect(devolucionService.crear).toHaveBeenCalledTimes(1);
++  });
++  it('registro exitoso: cierra el modal, recarga y confirma', () => {
++    const { c, devolucionService } = crear({ detalle: [linea(1, 3, 10)] });
++    c.ventaSelId = 9; c.cargarDetalle(); c.abrirNueva(); c.ventaSelId = 9; c.cargarDetalle();
++    c.lineas[0].devolver = 1;
++    const cargas = devolucionService.listar.mock.calls.length;
++    c.registrar();
++    expect(c.mostrarModal).toBe(false);
++    expect(c.esError).toBe(false);
++    expect(c.mensaje).toBe('Devolución registrada.');
++    expect(devolucionService.listar.mock.calls.length).toBe(cargas + 1);
++  });
++  it('si el servidor rechaza, muestra el texto que devuelve', () => {
++    const { c, devolucionService } = crear({ detalle: [linea(1, 3, 10)] });
++    devolucionService.crear.mockReturnValue(throwError(() => ({ error: 'No se puede devolver más de lo vendido' })));
++    c.ventaSelId = 9; c.cargarDetalle(); c.lineas[0].devolver = 1;
++    c.registrar();
++    expect(c.esError).toBe(true);
++    expect(c.mensaje).toBe('No se puede devolver más de lo vendido');
++  });
++  it('si el error no trae texto usa el mensaje genérico', () => {
++    const { c, devolucionService } = crear({ detalle: [linea(1, 3, 10)] });
++    devolucionService.crear.mockReturnValue(throwError(() => ({ status: 500 })));
++    c.ventaSelId = 9; c.cargarDetalle(); c.lineas[0].devolver = 1;
++    c.registrar();
++    expect(c.mensaje).toBe('Error al registrar.');
++  });
++
++  // ROJO ESPERADO: hoy la validación "no más de lo vendido" solo existe en el servidor.
++  // La pantalla deja enviar 5 unidades de una venta de 3. Decidir: validar también en pantalla o descartar este caso.
++  it('ROJO esperado: devolver más de lo vendido no se envía al servidor', () => {
++    const { c, devolucionService } = crear({ detalle: [linea(1, 3, 10)] });
++    c.ventaSelId = 9; c.cargarDetalle();
++    c.lineas[0].devolver = 5;
++    c.registrar();
++    expect(devolucionService.crear).not.toHaveBeenCalled();
++  });
++});
+diff --git a/src/app/Pages/layout/permisos.spec.ts b/src/app/Pages/layout/permisos.spec.ts
+new file mode 100644
+index 0000000..44000f5
+--- /dev/null
++++ b/src/app/Pages/layout/permisos.spec.ts
+@@ -0,0 +1,152 @@
++import { Subject } from 'rxjs';
++import { NavigationEnd } from '@angular/router';
++import { TestBed } from '@angular/core/testing';
++import { Router } from '@angular/router';
++import { LayoutComponent } from './layout.component';
++import { puede, rutasDe, primeraRuta, PERMISOS } from '../../Settings/permisos';
++import { rolGuard } from '../../Guards/rol.guard';
++import { AuthService } from '../../Services/auth.service';
++
++/**
++ * HU-S2-07 (H0026) Navegación rápida desde el dashboard.
++ * La navegación del sistema vive en el menú lateral (LayoutComponent) y se
++ * filtra por rol con permisos.ts. Estas pruebas verifican qué accesos ve cada rol.
++ */
++describe('HU-S2-07 Permisos por rol (qué accesos ve cada usuario)', () => {
++  it('el Administrador entra a todas las rutas', () => {
++    expect(puede('Administrador', 'usuarios')).toBe(true);
++    expect(puede('Administrador', 'stock')).toBe(true);
++    expect(puede('Administrador', 'ruta-que-no-existe')).toBe(true);
++  });
++  it('el Recepcionista entra a ventas y caja', () => {
++    expect(puede('Recepcionista', 'punto-de-venta')).toBe(true);
++    expect(puede('Recepcionista', 'historial-ventas')).toBe(true);
++    expect(puede('Recepcionista', 'caja')).toBe(true);
++  });
++  it('el Recepcionista NO entra a inventario ni administración', () => {
++    expect(puede('Recepcionista', 'productos')).toBe(false);
++    expect(puede('Recepcionista', 'stock')).toBe(false);
++    expect(puede('Recepcionista', 'usuarios')).toBe(false);
++  });
++  it('el Almacenero entra a inventario y abastecimiento', () => {
++    expect(puede('Almacenero', 'productos')).toBe(true);
++    expect(puede('Almacenero', 'categorias')).toBe(true);
++    expect(puede('Almacenero', 'stock')).toBe(true);
++    expect(puede('Almacenero', 'compras')).toBe(true);
++  });
++  it('el Almacenero NO entra al punto de venta ni a caja', () => {
++    expect(puede('Almacenero', 'punto-de-venta')).toBe(false);
++    expect(puede('Almacenero', 'caja')).toBe(false);
++  });
++  it('todos los roles definidos pueden entrar al dashboard', () => {
++    Object.keys(PERMISOS).forEach(rol => expect(puede(rol, 'dashboard')).toBe(true));
++  });
++  it('un rol desconocido o sin rol solo ve el dashboard (valor límite)', () => {
++    expect(rutasDe('Invitado')).toEqual(['dashboard']);
++    expect(rutasDe(null)).toEqual(['dashboard']);
++    expect(puede(null, 'dashboard')).toBe(true);
++    expect(puede(null, 'ventas')).toBe(false);
++  });
++  it('primeraRuta manda al Administrador al dashboard', () => {
++    expect(primeraRuta('Administrador')).toBe('dashboard');
++  });
++  it('primeraRuta manda a cada rol a su primera pantalla permitida', () => {
++    expect(primeraRuta('Recepcionista')).toBe('dashboard');
++    expect(primeraRuta('Almacenero')).toBe('dashboard');
++    expect(primeraRuta(null)).toBe('dashboard');
++  });
++});
++
++describe('HU-S2-07 Guard de rutas (rolGuard)', () => {
++  function evaluar(rol: string | null, path: string) {
++    const router: any = { navigate: vi.fn() };
++    const auth: any = { getRol: () => rol };
++    TestBed.configureTestingModule({
++      providers: [{ provide: AuthService, useValue: auth }, { provide: Router, useValue: router }]
++    });
++    const permitido = TestBed.runInInjectionContext(
++      () => rolGuard({ routeConfig: { path } } as any, {} as any));
++    return { permitido, router };
++  }
++
++  it('deja pasar si el rol tiene permiso', () => {
++    const { permitido, router } = evaluar('Almacenero', 'stock');
++    expect(permitido).toBe(true);
++    expect(router.navigate).not.toHaveBeenCalled();
++  });
++  it('bloquea y redirige si el rol no tiene permiso', () => {
++    const { permitido, router } = evaluar('Recepcionista', 'usuarios');
++    expect(permitido).toBe(false);
++    expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
++  });
++});
++
++describe('HU-S2-07 Menú lateral (LayoutComponent)', () => {
++  function crear(rol: string, nombre = 'dany baca') {
++    const events = new Subject<any>();
++    const router: any = { events, navigate: vi.fn() };
++    const route: any = { firstChild: null, snapshot: { data: {} } };
++    const auth: any = { getNombre: () => nombre, getRol: () => rol, logout: vi.fn() };
++    const cdr: any = { detectChanges: vi.fn() };
++    const c = new LayoutComponent(auth, router, route, cdr);
++    c.ngOnInit();
++    return { c, auth, router, route, events };
++  }
++
++  it('toma el nombre, el rol y la inicial en mayúscula del usuario', () => {
++    const { c } = crear('Almacenero', 'dany baca');
++    expect(c.nombre).toBe('dany baca');
++    expect(c.rol).toBe('Almacenero');
++    expect(c.inicial).toBe('D');
++  });
++  it('sin nombre usa "Usuario"', () => {
++    const { c } = crear('Almacenero', '');
++    expect(c.nombre).toBe('Usuario');
++    expect(c.inicial).toBe('U');
++  });
++  it('el Administrador ve todos los grupos del menú', () => {
++    const { c } = crear('Administrador');
++    expect(c.grupoVentas()).toBe(true);
++    expect(c.grupoInventario()).toBe(true);
++    expect(c.grupoAbastecimiento()).toBe(true);
++    expect(c.grupoAdmin()).toBe(true);
++  });
++  it('el Almacenero ve Inventario y Abastecimiento, no Ventas ni Administración', () => {
++    const { c } = crear('Almacenero');
++    expect(c.grupoInventario()).toBe(true);
++    expect(c.grupoAbastecimiento()).toBe(true);
++    expect(c.grupoVentas()).toBe(false);
++    expect(c.grupoAdmin()).toBe(false);
++  });
++  it('el Recepcionista ve Ventas, no Inventario', () => {
++    const { c } = crear('Recepcionista');
++    expect(c.grupoVentas()).toBe(true);
++    expect(c.grupoInventario()).toBe(false);
++  });
++  it('toggle abre y cierra un grupo desplegable', () => {
++    const { c } = crear('Administrador');
++    expect(c.grupos.ventas).toBe(true);
++    c.toggle('ventas');
++    expect(c.grupos.ventas).toBe(false);
++    c.toggle('ventas');
++    expect(c.grupos.ventas).toBe(true);
++  });
++  it('al navegar, el título de la sección sale de la ruta activa', () => {
++    const { c, route, events } = crear('Administrador');
++    (route as any).firstChild = { firstChild: null, snapshot: { data: { titulo: 'Inventario' } } };
++    events.next(new NavigationEnd(1, '/stock', '/stock'));
++    expect(c.tituloSeccion).toBe('Inventario');
++  });
++  it('si la ruta no trae título usa "Dashboard"', () => {
++    const { c, route, events } = crear('Administrador');
++    (route as any).firstChild = { firstChild: null, snapshot: { data: {} } };
++    events.next(new NavigationEnd(2, '/x', '/x'));
++    expect(c.tituloSeccion).toBe('Dashboard');
++  });
++  it('salir cierra la sesión y vuelve al login', () => {
++    const { c, auth, router } = crear('Administrador');
++    c.salir();
++    expect(auth.logout).toHaveBeenCalled();
++    expect(router.navigate).toHaveBeenCalledWith(['/login']);
++  });
++});
+diff --git a/src/app/Pages/productos/productos.component.spec.ts b/src/app/Pages/productos/productos.component.spec.ts
+new file mode 100644
+index 0000000..fcaefcc
+--- /dev/null
++++ b/src/app/Pages/productos/productos.component.spec.ts
+@@ -0,0 +1,200 @@
++import { of, throwError } from 'rxjs';
++import { ProductosComponent } from './productos.component';
++import { Producto } from '../../Models/Producto';
++
++const prod = (o: Partial<Producto>): Producto => ({
++  id: 1, codigo: 'X', nombre: 'Prod', categoria: null,
++  precioCompra: 10, precioVenta: 15, stock: 10, stockMinimo: 5, activo: true, ...o
++});
++
++function crear(productos: Producto[] = [], categorias: any[] = []) {
++  const productoService: any = {
++    listar: vi.fn(() => of(productos)),
++    crear: vi.fn(() => of({})),
++    actualizar: vi.fn(() => of({})),
++    eliminar: vi.fn(() => of({}))
++  };
++  const categoriaService: any = { listar: vi.fn(() => of(categorias)) };
++  const cdr: any = { detectChanges: vi.fn() };
++  const c = new ProductosComponent(productoService, categoriaService, cdr);
++  return { c, productoService, categoriaService };
++}
++
++beforeEach(() => { vi.useFakeTimers(); });
++afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
++
++describe('HU-S2-15 Listar productos', () => {
++  it('al abrir carga todos los productos y las categorías', () => {
++    const { c } = crear([prod({ id: 1 }), prod({ id: 2 })], [{ id: 1, nombre: 'Herramientas' }]);
++    c.ngOnInit();
++    expect(c.productos.length).toBe(2);
++    expect(c.productosFiltrados.length).toBe(2);
++    expect(c.categorias.length).toBe(1);
++    expect(c.cargando).toBe(false);
++  });
++  it('sin productos la lista queda vacía sin error', () => {
++    const { c } = crear([]); c.ngOnInit();
++    expect(c.productosFiltrados).toEqual([]);
++    expect(c.error).toBe('');
++  });
++  it('si el servidor no responde muestra el aviso de conexión', () => {
++    const { c, productoService } = crear();
++    productoService.listar.mockReturnValue(throwError(() => new Error('x')));
++    c.ngOnInit();
++    expect(c.error).toBe('No se pudo conectar con el servidor.');
++    expect(c.cargando).toBe(false);
++  });
++});
++
++describe('HU-S2-16 Buscar producto', () => {
++  const lista = [
++    prod({ id: 1, nombre: 'Taladro', codigo: 'TAL001' }),
++    prod({ id: 2, nombre: 'Martillo', codigo: 'MAR001' }),
++    prod({ id: 3, nombre: 'Clavo', codigo: '' }),
++  ];
++  function buscar(texto: string) {
++    const ctx = crear(lista); ctx.c.ngOnInit();
++    ctx.c.busqueda = texto; ctx.c.buscar();
++    vi.advanceTimersByTime(300);
++    return ctx.c;
++  }
++  it('filtra por nombre sin distinguir mayúsculas', () => {
++    expect(buscar('MARTILLO').productosFiltrados.map(p => p.nombre)).toEqual(['Martillo']);
++  });
++  it('filtra por código', () => {
++    expect(buscar('tal001').productosFiltrados.map(p => p.nombre)).toEqual(['Taladro']);
++  });
++  it('texto vacío o en blanco muestra todos', () => {
++    expect(buscar('   ').productosFiltrados.length).toBe(3);
++  });
++  it('texto sin coincidencias deja la lista vacía', () => {
++    expect(buscar('zzz').productosFiltrados.length).toBe(0);
++  });
++  it('un producto sin código no rompe la búsqueda', () => {
++    expect(buscar('clavo').productosFiltrados.map(p => p.nombre)).toEqual(['Clavo']);
++  });
++  it('espera 300 ms antes de filtrar (valor límite del debounce)', () => {
++    const { c } = crear(lista); c.ngOnInit();
++    c.busqueda = 'taladro'; c.buscar();
++    vi.advanceTimersByTime(299);
++    expect(c.productosFiltrados.length).toBe(3);
++    vi.advanceTimersByTime(1);
++    expect(c.productosFiltrados.length).toBe(1);
++  });
++});
++
++describe('HU-S2-17 Registrar nuevo producto (pantalla)', () => {
++  function conForm(o: Partial<Producto> = {}) {
++    const ctx = crear(); ctx.c.ngOnInit(); ctx.c.abrirModalNuevo();
++    Object.assign(ctx.c.form, { nombre: 'Martillo', precioCompra: 10, precioVenta: 15, stock: 5 }, o);
++    return ctx;
++  }
++
++  it('el formulario nuevo empieza vacío, activo y con stock mínimo 5', () => {
++    const { c } = crear(); c.abrirModalNuevo();
++    expect(c.mostrarModal).toBe(true);
++    expect(c.modoEdicion).toBe(false);
++    expect(c.form).toMatchObject({ nombre: '', precioCompra: 0, precioVenta: 0, stock: 0, stockMinimo: 5, activo: true });
++  });
++  it('sin nombre no guarda', () => {
++    const { c, productoService } = conForm({ nombre: '' });
++    c.guardar();
++    expect(productoService.crear).not.toHaveBeenCalled();
++    expect(c.error).toBe('Nombre y precio de venta son obligatorios.');
++  });
++  it('precio de venta 0 no guarda', () => {
++    const { c, productoService } = conForm({ precioVenta: 0, precioCompra: 0 });
++    c.guardar();
++    expect(productoService.crear).not.toHaveBeenCalled();
++    expect(c.error).toBe('Nombre y precio de venta son obligatorios.');
++  });
++  it('precio de venta menor al de compra se rechaza', () => {
++    const { c, productoService } = conForm({ precioCompra: 20, precioVenta: 15 });
++    c.guardar();
++    expect(productoService.crear).not.toHaveBeenCalled();
++    expect(c.error).toContain('no puede ser menor');
++  });
++  it('venta = compra - 0.01 se rechaza (valor límite)', () => {
++    const { c, productoService } = conForm({ precioCompra: 10, precioVenta: 9.99 });
++    c.guardar();
++    expect(productoService.crear).not.toHaveBeenCalled();
++  });
++  it('venta = compra es válido (valor límite)', () => {
++    const { c, productoService } = conForm({ precioCompra: 10, precioVenta: 10 });
++    c.guardar();
++    expect(productoService.crear).toHaveBeenCalledTimes(1);
++  });
++  it('producto válido: crea, cierra el modal y recarga la lista', () => {
++    const { c, productoService } = conForm();
++    const cargas = productoService.listar.mock.calls.length;
++    c.guardar();
++    expect(productoService.crear).toHaveBeenCalledWith(c.form);
++    expect(c.mostrarModal).toBe(false);
++    expect(productoService.listar.mock.calls.length).toBe(cargas + 1);
++  });
++  it('si el servidor rechaza muestra su mensaje y deja el modal abierto', () => {
++    const { c, productoService } = conForm();
++    productoService.crear.mockReturnValue(throwError(() => ({ error: 'El stock no puede ser negativo.' })));
++    c.guardar();
++    expect(c.error).toBe('El stock no puede ser negativo.');
++    expect(c.mostrarModal).toBe(true);
++  });
++  it('si el error no trae texto usa el mensaje genérico de creación', () => {
++    const { c, productoService } = conForm();
++    productoService.crear.mockReturnValue(throwError(() => ({ status: 500 })));
++    c.guardar();
++    expect(c.error).toBe('Error al crear el producto.');
++  });
++
++  // ROJO ESPERADO: el criterio de la historia dice que un stock negativo se rechaza.
++  // Hoy la pantalla lo deja pasar y solo el servidor lo frena. Decidir: validar en pantalla o descartar el caso.
++  it('ROJO esperado: stock negativo no se envía al servidor', () => {
++    const { c, productoService } = conForm({ stock: -1 });
++    c.guardar();
++    expect(productoService.crear).not.toHaveBeenCalled();
++  });
++});
++
++describe('H0048-H0049 Editar e inactivar producto (pantalla)', () => {
++  it('abrirModalEditar copia los datos del producto al formulario', () => {
++    const { c } = crear();
++    c.abrirModalEditar(prod({ id: 8, nombre: 'Taladro', categoria: { id: 2, nombre: 'Eléctricas' }, precioVenta: 99 }));
++    expect(c.modoEdicion).toBe(true);
++    expect(c.productoEditandoId).toBe(8);
++    expect(c.form.nombre).toBe('Taladro');
++    expect(c.form.categoria).toEqual({ id: 2 });
++    expect(c.form.precioVenta).toBe(99);
++  });
++  it('guardar en modo edición actualiza el producto, no crea otro', () => {
++    const { c, productoService } = crear();
++    c.abrirModalEditar(prod({ id: 8, precioCompra: 10, precioVenta: 15 }));
++    c.guardar();
++    expect(productoService.actualizar).toHaveBeenCalledWith(8, c.form);
++    expect(productoService.crear).not.toHaveBeenCalled();
++  });
++  it('eliminar pide confirmación y, si se cancela, no hace nada', () => {
++    vi.stubGlobal('confirm', () => false);
++    const { c, productoService } = crear();
++    c.eliminar(prod({ id: 3 }));
++    expect(productoService.eliminar).not.toHaveBeenCalled();
++  });
++  it('eliminar confirmado inactiva el producto y recarga la lista', () => {
++    vi.stubGlobal('confirm', () => true);
++    const { c, productoService } = crear();
++    const cargas = productoService.listar.mock.calls.length;
++    c.eliminar(prod({ id: 3 }));
++    expect(productoService.eliminar).toHaveBeenCalledWith(3);
++    expect(productoService.listar.mock.calls.length).toBe(cargas + 1);
++  });
++});
++
++describe('Indicador de stock en la lista de productos', () => {
++  const { c } = crear();
++  it('stock 0 => peligro', () => expect(c.stockClass(prod({ stock: 0 }))).toBe('badge-danger'));
++  it('stock igual al mínimo => advertencia (valor límite)', () => {
++    expect(c.stockClass(prod({ stock: 5, stockMinimo: 5 }))).toBe('badge-warning');
++  });
++  it('stock = mínimo + 1 => correcto (valor límite)', () => {
++    expect(c.stockClass(prod({ stock: 6, stockMinimo: 5 }))).toBe('badge-success');
++  });
++});
+diff --git a/src/app/Pages/punto-venta/punto-venta.catalogo.spec.ts b/src/app/Pages/punto-venta/punto-venta.catalogo.spec.ts
+new file mode 100644
+index 0000000..fe9b937
+--- /dev/null
++++ b/src/app/Pages/punto-venta/punto-venta.catalogo.spec.ts
+@@ -0,0 +1,269 @@
++import { of, throwError } from 'rxjs';
++import { PuntoVentaComponent } from './punto-venta.component';
++import { Producto } from '../../Models/Producto';
++
++const prod = (o: Partial<Producto>): Producto => ({
++  id: 1, codigo: 'X', nombre: 'Martillo', categoria: null,
++  precioCompra: 10, precioVenta: 15, stock: 5, stockMinimo: 1, activo: true, ...o
++});
++const cliente = (o: any = {}) => ({
++  id: 1, nombre: 'Cliente General', tipoDocumento: 'DNI', numeroDocumento: '12345678',
++  telefono: '', email: '', ...o
++});
++
++function crear(opts: { productos?: Producto[]; clientes?: any[]; productosError?: boolean; venta?: any } = {}) {
++  const productos = opts.productos ?? [];
++  const productoService: any = {
++    listar: vi.fn(() => opts.productosError ? throwError(() => new Error('x')) : of(productos))
++  };
++  const clienteService: any = { getAll: vi.fn(() => of(opts.clientes ?? [cliente()])) };
++  const venta = opts.venta ?? { numeroComprobante: 'B001-00000001', total: 17.7, createdAt: '2026-10-09T10:00:00' };
++  const ventaService: any = { registrar: vi.fn(() => of(venta)) };
++  const auth: any = { getUsuarioId: vi.fn(() => 7) };
++  const comprobante: any = { precargar: vi.fn(), emitir: vi.fn() };
++  const cdr: any = { detectChanges: vi.fn() };
++  const c = new PuntoVentaComponent(productoService, clienteService, ventaService, auth, comprobante, cdr);
++  return { c, productoService, ventaService, comprobante, auth };
++}
++
++beforeEach(() => { vi.useFakeTimers(); });
++afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
++
++describe('HU-S2-08 Visualizar catálogo de productos (punto de venta)', () => {
++  const lista = [
++    prod({ id: 1, nombre: 'Martillo', codigo: 'MAR001' }),
++    prod({ id: 2, nombre: 'Taladro', codigo: 'TAL001' }),
++  ];
++
++  it('al abrir carga todos los productos en el catálogo', () => {
++    const { c } = crear({ productos: lista });
++    c.ngOnInit();
++    expect(c.productos.length).toBe(2);
++    expect(c.filtrados.length).toBe(2);
++  });
++  it('si falla la carga avisa con un mensaje de error', () => {
++    const { c } = crear({ productosError: true });
++    c.ngOnInit();
++    expect(c.esError).toBe(true);
++    expect(c.mensaje).toBe('No se pudieron cargar los productos.');
++  });
++  it('sin productos el catálogo queda vacío sin error', () => {
++    const { c } = crear({ productos: [] });
++    c.ngOnInit();
++    expect(c.filtrados).toEqual([]);
++    expect(c.esError).toBe(false);
++  });
++  it('filtra por nombre sin distinguir mayúsculas', () => {
++    const { c } = crear({ productos: lista }); c.ngOnInit();
++    c.busqueda = 'TALADRO'; c.filtrar();
++    expect(c.filtrados.map(p => p.nombre)).toEqual(['Taladro']);
++  });
++  it('filtra por código', () => {
++    const { c } = crear({ productos: lista }); c.ngOnInit();
++    c.busqueda = 'mar001'; c.filtrar();
++    expect(c.filtrados.map(p => p.nombre)).toEqual(['Martillo']);
++  });
++  it('texto en blanco muestra todo el catálogo', () => {
++    const { c } = crear({ productos: lista }); c.ngOnInit();
++    c.busqueda = '   '; c.filtrar();
++    expect(c.filtrados.length).toBe(2);
++  });
++  it('texto sin coincidencias deja el catálogo vacío', () => {
++    const { c } = crear({ productos: lista }); c.ngOnInit();
++    c.busqueda = 'zzz'; c.filtrar();
++    expect(c.filtrados.length).toBe(0);
++  });
++  it('un producto sin código no rompe la búsqueda', () => {
++    const { c } = crear({ productos: [prod({ id: 3, nombre: 'Clavo', codigo: '' })] }); c.ngOnInit();
++    c.busqueda = 'clavo'; c.filtrar();
++    expect(c.filtrados.length).toBe(1);
++  });
++});
++
++describe('HU-S2-09 Carrito: cantidades y totales', () => {
++  it('cambiar(+1) sube la cantidad dentro del stock', () => {
++    const { c } = crear(); const p = prod({ stock: 5 });
++    c.agregar(p); c.cambiar(c.carrito[0], +1);
++    expect(c.carrito[0].cantidad).toBe(2);
++  });
++  it('cambiar a una cantidad mayor al stock se rechaza (valor límite stock+1)', () => {
++    const { c } = crear(); const p = prod({ stock: 2 });
++    c.agregar(p); c.cambiar(c.carrito[0], +1);   // 2 = stock, válido
++    c.cambiar(c.carrito[0], +1);                 // 3 > stock
++    expect(c.carrito[0].cantidad).toBe(2);
++    expect(c.esError).toBe(true);
++  });
++  it('cambiar a 0 quita el producto del carrito (valor límite)', () => {
++    const { c } = crear(); c.agregar(prod({ stock: 5 }));
++    c.cambiar(c.carrito[0], -1);
++    expect(c.carrito.length).toBe(0);
++  });
++  it('quitar elimina solo ese producto', () => {
++    const { c } = crear();
++    c.agregar(prod({ id: 1 })); c.agregar(prod({ id: 2, nombre: 'Taladro' }));
++    c.quitar(c.carrito[0]);
++    expect(c.carrito.map(i => i.producto.id)).toEqual([2]);
++  });
++  it('vaciar deja el carrito y el monto recibido en cero', () => {
++    const { c } = crear(); c.agregar(prod({})); c.montoRecibido = 50;
++    c.vaciar();
++    expect(c.carrito.length).toBe(0);
++    expect(c.montoRecibido).toBe(0);
++  });
++  it('carrito vacío: subtotal, IGV y total son 0', () => {
++    const { c } = crear();
++    expect(c.subtotal).toBe(0); expect(c.igv).toBe(0); expect(c.total).toBe(0);
++  });
++  it('calcula subtotal, IGV (18 %) y total: 2 x S/ 15', () => {
++    const { c } = crear(); const p = prod({ precioVenta: 15, stock: 5 });
++    c.agregar(p); c.cambiar(c.carrito[0], +1);
++    expect(c.subtotal).toBeCloseTo(30, 2);
++    expect(c.igv).toBeCloseTo(5.4, 2);
++    expect(c.total).toBeCloseTo(35.4, 2);
++  });
++  it('suma varios productos distintos', () => {
++    const { c } = crear();
++    c.agregar(prod({ id: 1, precioVenta: 10 })); c.agregar(prod({ id: 2, precioVenta: 20 }));
++    expect(c.subtotal).toBeCloseTo(30, 2);
++  });
++});
++
++describe('HU-S2-10 Seleccionar cliente (casos adicionales)', () => {
++  it('si no hay cliente "General" preselecciona el primero de la lista', () => {
++    const { c } = crear({ clientes: [cliente({ id: 5, nombre: 'Juan Pérez' }), cliente({ id: 6, nombre: 'Ana' })] });
++    c.ngOnInit();
++    expect(c.clienteId).toBe(5);
++  });
++  it('sin clientes registrados no hay cliente seleccionado', () => {
++    const { c } = crear({ clientes: [] }); c.ngOnInit();
++    expect(c.clienteId).toBeNull();
++    expect(c.clienteSeleccionado).toBeUndefined();
++  });
++  it('documentoCliente devuelve el documento del cliente elegido', () => {
++    const { c } = crear({ clientes: [cliente({ id: 5, numeroDocumento: '87654321' })] }); c.ngOnInit();
++    expect(c.documentoCliente).toBe('87654321');
++  });
++});
++
++describe('H0031-H0033 Comprobante, pago y registro de la venta', () => {
++  function listo(extra: Partial<{ tipo: string; ruc: string; recibido: number; clienteId: number | null }> = {}) {
++    const ctx = crear({ productos: [prod({ id: 9, precioVenta: 15, stock: 5 })] });
++    ctx.c.ngOnInit();
++    ctx.c.agregar(ctx.c.productos[0]);         // subtotal 15, total 17.70
++    ctx.c.tipoComprobante = extra.tipo ?? 'Boleta';
++    ctx.c.rucFactura = extra.ruc ?? '';
++    ctx.c.montoRecibido = extra.recibido ?? 20;
++    if (extra.clienteId !== undefined) ctx.c.clienteId = extra.clienteId;
++    return ctx;
++  }
++
++  it('carrito vacío: no registra y avisa', () => {
++    const { c, ventaService } = crear(); c.ngOnInit();
++    c.registrar();
++    expect(ventaService.registrar).not.toHaveBeenCalled();
++    expect(c.mensaje).toBe('El carrito está vacío.');
++  });
++  it('sin cliente seleccionado: no registra y avisa', () => {
++    const { c, ventaService } = listo({ clienteId: null });
++    c.registrar();
++    expect(ventaService.registrar).not.toHaveBeenCalled();
++    expect(c.mensaje).toBe('Selecciona un cliente antes de registrar la venta.');
++  });
++  it('monto recibido menor al total: no registra (valor límite total - 0.01)', () => {
++    const { c, ventaService } = listo({ recibido: 17.69 });
++    expect(c.pagoInsuficiente).toBe(true);
++    c.registrar();
++    expect(ventaService.registrar).not.toHaveBeenCalled();
++    expect(c.esError).toBe(true);
++  });
++  it('monto recibido igual al total es válido (valor límite) y el cambio es 0', () => {
++    const { c, ventaService } = listo({ recibido: 17.7 });
++    expect(c.pagoInsuficiente).toBe(false);
++    expect(c.cambio).toBeCloseTo(0, 2);
++    c.registrar();
++    expect(ventaService.registrar).toHaveBeenCalledTimes(1);
++  });
++  it('el cambio es lo recibido menos el total', () => {
++    const { c } = listo({ recibido: 20 });
++    expect(c.cambio).toBeCloseTo(2.3, 2);
++  });
++  it('factura sin RUC (ni en el cliente): no registra', () => {
++    const { c, ventaService } = crear({ clientes: [cliente({ numeroDocumento: '' })], productos: [prod({ id: 9 })] });
++    c.ngOnInit(); c.agregar(c.productos[0]);
++    c.tipoComprobante = 'Factura'; c.rucFactura = ''; c.montoRecibido = 100;
++    c.registrar();
++    expect(ventaService.registrar).not.toHaveBeenCalled();
++    expect(c.mensaje).toBe('Ingresa el RUC del cliente para emitir una factura.');
++  });
++  it('factura usa el RUC escrito en pantalla en lugar del documento del cliente', () => {
++    const { c, ventaService } = listo({ tipo: 'Factura', ruc: '20123456789', recibido: 100 });
++    c.registrar();
++    expect(ventaService.registrar.mock.calls[0][0].venta.rucCliente).toBe('20123456789');
++  });
++  it('boleta usa el documento del cliente', () => {
++    const { c, ventaService } = listo({ tipo: 'Boleta', recibido: 100 });
++    c.registrar();
++    expect(ventaService.registrar.mock.calls[0][0].venta.rucCliente).toBe('12345678');
++  });
++  it('envía usuario, tipo de pago, comprobante y detalle con precio unitario', () => {
++    const { c, ventaService } = listo({ recibido: 100 });
++    c.tipoPago = 'Yape';
++    c.registrar();
++    const p = ventaService.registrar.mock.calls[0][0];
++    expect(p.usuarioId).toBe(7);
++    expect(p.venta.tipoPago).toBe('Yape');
++    expect(p.venta.tipoComprobante).toBe('Boleta');
++    expect(p.venta.cliente).toEqual({ id: 1 });
++    expect(p.detalles).toEqual([{ producto: { id: 9 }, cantidad: 1, precioUnitario: 15 }]);
++  });
++  it('venta exitosa: emite el comprobante, vacía el carrito y refresca el stock', () => {
++    const { c, comprobante, productoService } = listo({ recibido: 100 });
++    const llamadasAntes = productoService.listar.mock.calls.length;
++    c.registrar();
++    expect(comprobante.emitir).toHaveBeenCalledTimes(1);
++    expect(c.carrito.length).toBe(0);
++    expect(c.cargando).toBe(false);
++    expect(c.esError).toBe(false);
++    expect(c.mensaje).toContain('B001-00000001');
++    expect(productoService.listar.mock.calls.length).toBe(llamadasAntes + 1);
++  });
++  it('si el servidor rechaza la venta: avisa, no emite comprobante y conserva el carrito', () => {
++    const { c, ventaService, comprobante } = listo({ recibido: 100 });
++    ventaService.registrar.mockReturnValue(throwError(() => new Error('Stock insuficiente')));
++    c.registrar();
++    expect(c.esError).toBe(true);
++    expect(c.mensaje).toBe('Stock insuficiente');
++    expect(comprobante.emitir).not.toHaveBeenCalled();
++    expect(c.carrito.length).toBe(1);
++    expect(c.cargando).toBe(false);
++  });
++});
++
++describe('H0034 Generar proforma', () => {
++  it('carrito vacío: no abre la proforma y avisa', () => {
++    const { c } = crear();
++    const abrir = vi.spyOn(window, 'open');
++    c.proforma();
++    expect(abrir).not.toHaveBeenCalled();
++    expect(c.mensaje).toBe('El carrito está vacío.');
++  });
++  it('si el navegador bloquea la ventana emergente avisa', () => {
++    const { c } = crear(); c.agregar(prod({}));
++    vi.spyOn(window, 'open').mockReturnValue(null);
++    c.proforma();
++    expect(c.esError).toBe(true);
++    expect(c.mensaje).toContain('ventanas emergentes');
++  });
++  it('genera la proforma con el producto, el total y la aclaración de que no es comprobante', () => {
++    const { c } = crear(); c.agregar(prod({ nombre: 'Martillo', precioVenta: 15 }));
++    const doc = { write: vi.fn(), close: vi.fn() };
++    vi.spyOn(window, 'open').mockReturnValue({ document: doc } as any);
++    c.proforma();
++    const html = doc.write.mock.calls[0][0] as string;
++    expect(html).toContain('PROFORMA');
++    expect(html).toContain('Martillo');
++    expect(html).toContain('S/ 17.70');
++    expect(html).toContain('no válido como comprobante');
++    expect(doc.close).toHaveBeenCalled();
++  });
++});
+diff --git a/src/app/Pages/ventas/ventas.component.spec.ts b/src/app/Pages/ventas/ventas.component.spec.ts
+new file mode 100644
+index 0000000..c9e1645
+--- /dev/null
++++ b/src/app/Pages/ventas/ventas.component.spec.ts
+@@ -0,0 +1,96 @@
++import { VentasComponent } from './ventas.component';
++
++function crear(ventas: any[] = []) {
++  const ventaService: any = {};
++  const auth: any = {};
++  const comprobante: any = {};
++  const cdr: any = { detectChanges: vi.fn() };
++  const c = new VentasComponent(ventaService, auth, comprobante, cdr);
++  c.ventas = ventas;
++  return c;
++}
++
++const v = (id: number, createdAt: string, total = 100, estado = 'Completada') =>
++  ({ id, createdAt, total, estado }) as any;
++
++describe('H0035 Listar historial de ventas (CP-037, CP-038)', () => {
++  it('sin filtros muestra todas las ventas', () => {
++    const c = crear([v(1, '2026-09-10T10:00:00'), v(2, '2026-09-11T10:00:00')]);
++    expect(c.ventasFiltradas.length).toBe(2);
++  });
++  it('sin ventas la lista queda vacía sin error', () => {
++    const c = crear([]);
++    expect(c.ventasFiltradas).toEqual([]);
++    expect(c.totalVentas).toBe(0);
++  });
++});
++
++describe('H0036 Filtrar historial por fechas (CP-039, CP-040, CP-041)', () => {
++  const lista = [
++    v(1, '2026-09-09T23:59:59'),   // un segundo antes del rango
++    v(2, '2026-09-10T00:00:00'),   // inicio del rango
++    v(3, '2026-09-12T12:00:00'),
++    v(4, '2026-09-15T23:59:59'),   // último segundo de la fecha final
++    v(5, '2026-09-16T00:00:00'),   // un segundo después del rango
++  ];
++
++  it('lista solo las ventas del rango', () => {
++    const c = crear(lista);
++    c.fechaInicio = '2026-09-10'; c.fechaFin = '2026-09-15';
++    expect(c.ventasFiltradas.map(x => x.id)).toEqual([2, 3, 4]);
++  });
++  it('la fecha final incluye todo el día hasta 23:59:59 (valor límite)', () => {
++    const c = crear(lista);
++    c.fechaFin = '2026-09-15';
++    expect(c.ventasFiltradas.map(x => x.id)).toContain(4);
++    expect(c.ventasFiltradas.map(x => x.id)).not.toContain(5);
++  });
++  it('la fecha inicial incluye las ventas desde las 00:00:00 (valor límite)', () => {
++    const c = crear(lista);
++    c.fechaInicio = '2026-09-10';
++    expect(c.ventasFiltradas.map(x => x.id)).toContain(2);
++    expect(c.ventasFiltradas.map(x => x.id)).not.toContain(1);
++  });
++  it('con fecha inicial posterior a la final la lista queda vacía (hoy no avisa)', () => {
++    const c = crear(lista);
++    c.fechaInicio = '2026-09-15'; c.fechaFin = '2026-09-10';
++    expect(c.ventasFiltradas).toEqual([]);
++  });
++  it('un día sin ventas devuelve lista vacía', () => {
++    const c = crear(lista);
++    c.fechaInicio = '2026-09-20'; c.fechaFin = '2026-09-20';
++    expect(c.ventasFiltradas).toEqual([]);
++  });
++});
++
++describe('H0036 Filtrar por estado', () => {
++  const lista = [v(1, '2026-09-10T10:00:00'), v(2, '2026-09-10T11:00:00', 50, 'Anulada')];
++  it('"Todos" muestra completadas y anuladas', () => {
++    expect(crear(lista).ventasFiltradas.length).toBe(2);
++  });
++  it('filtra solo las anuladas', () => {
++    const c = crear(lista); c.estadoFiltro = 'Anulada';
++    expect(c.ventasFiltradas.map(x => x.id)).toEqual([2]);
++  });
++});
++
++describe('H0037 Resumen de ventas (CP-042, CP-043)', () => {
++  it('los totales coinciden con la suma de las ventas completadas', () => {
++    const c = crear([v(1, '2026-09-10T10:00:00', 100), v(2, '2026-09-10T11:00:00', 50.5),
++                     v(3, '2026-09-10T12:00:00', 999, 'Anulada')]);
++    expect(c.totalVentas).toBe(150.5);
++    expect(c.numVentas).toBe(2);
++    expect(c.numAnuladas).toBe(1);
++  });
++  it('sin ventas los totales son 0', () => {
++    const c = crear([]);
++    expect(c.totalVentas).toBe(0);
++    expect(c.numVentas).toBe(0);
++    expect(c.numAnuladas).toBe(0);
++  });
++  it('el resumen respeta el filtro de fechas', () => {
++    const c = crear([v(1, '2026-09-10T10:00:00', 100), v(2, '2026-09-20T10:00:00', 70)]);
++    c.fechaInicio = '2026-09-15';
++    expect(c.totalVentas).toBe(70);
++  });
++});
+-- 
+2.43.0
+
