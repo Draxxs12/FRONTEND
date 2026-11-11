@@ -28,9 +28,11 @@ jobs:
       - name: Usar npm declarado por el proyecto
         run: npm install --global npm@11.12.1
 
-      - name: Aplicar correcciones compatibles
+      - name: Resolver versiones y aplicar correcciones compatibles
         run: |
+          npm install
           npm audit fix || true
+          npm install
           npm ci
 
       - name: Compilar aplicación
