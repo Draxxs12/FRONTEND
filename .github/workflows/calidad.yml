@@ -18,6 +18,25 @@ jobs:
       - name: Vulnerabilidades de dependencias
         run: npm audit --audit-level=high
 
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Pruebas end-to-end
+        run: npm run e2e
+      - name: Publicar reporte Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-playwright
+          path: playwright-report/
+          if-no-files-found: ignore
+
   secretos:
     runs-on: ubuntu-latest
     steps:
