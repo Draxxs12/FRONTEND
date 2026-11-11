@@ -30,6 +30,7 @@ jobs:
 
       - name: Resolver versiones y aplicar correcciones compatibles
         run: |
+          rm -f package-lock.json
           npm install
           npm audit fix || true
           npm install
