@@ -50,10 +50,12 @@ export class CategoriasComponent implements OnInit {
   cerrar(): void { this.mostrarModal = false; }
 
   guardar(): void {
-    if (!this.form.nombre.trim()) { this.notificar('El nombre es obligatorio.', true); return; }
+    const nombre = this.form.nombre.trim();
+    if (!nombre) { this.notificar('El nombre es obligatorio.', true); return; }
+
     const obs = this.modoEdicion && this.form.id != null
-      ? this.categoriaService.actualizar(this.form.id, this.form)
-      : this.categoriaService.crear({ nombre: this.form.nombre });
+      ? this.categoriaService.actualizar(this.form.id, { ...this.form, nombre })
+      : this.categoriaService.crear({ nombre });
     obs.subscribe({
       next: () => { this.cerrar(); this.cargar(); this.notificar('Categoría guardada.', false); },
       error: () => this.notificar('Error al guardar.', true)

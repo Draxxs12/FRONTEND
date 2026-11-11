@@ -12,11 +12,44 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
+      - name: Usar la versión npm declarada por el proyecto
+        run: npm install --global npm@11.12.1
       - run: npm ci
       - name: Pruebas unitarias (Vitest)
         run: npx ng test --watch=false
-      - name: Vulnerabilidades de dependencias
+      - name: Auditoría de dependencias
         run: npm audit --audit-level=high
+      - name: Generar informe de auditoría (JSON)
+        if: always()
+        run: npm audit --json > npm-audit.json || true
+      - name: Publicar informe de dependencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-dependencias
+          path: npm-audit.json
+          if-no-files-found: ignore
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - name: Usar la versión npm declarada por el proyecto
+        run: npm install --global npm@11.12.1
+      - run: npm ci
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Pruebas end-to-end
+        run: npm run e2e
+      - name: Publicar reporte Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-playwright
+          path: playwright-report/
+          if-no-files-found: ignore
 
   secretos:
     runs-on: ubuntu-latest

@@ -61,6 +61,16 @@ export class DevolucionesComponent implements OnInit {
   }
 
   registrar(): void {
+    const cantidadesInvalidas = this.lineas.some(l =>
+      !Number.isFinite(Number(l.devolver)) ||
+      l.devolver < 0 ||
+      l.devolver > l.cantidad
+    );
+    if (cantidadesInvalidas) {
+      this.notificar('La cantidad a devolver no puede ser negativa ni superar la cantidad vendida.', true);
+      return;
+    }
+
     const detalles = this.lineas
       .filter(l => l.devolver > 0 && l.producto)
       .map(l => ({ producto: { id: l.producto!.id }, cantidad: l.devolver, precioUnitario: l.precioUnitario }));
