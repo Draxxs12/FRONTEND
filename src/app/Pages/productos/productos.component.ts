@@ -30,7 +30,6 @@ export class ProductosComponent implements OnInit, OnDestroy {
   productoEditandoId: number | null = null;
   form: ProductoForm = this.formVacio();
 
-  // ✅ Subject para debounce — emite cada vez que el usuario escribe
   private busquedaSubject = new Subject<string>();
   private destroy$        = new Subject<void>();
 
@@ -44,7 +43,6 @@ export class ProductosComponent implements OnInit, OnDestroy {
     this.cargarProductos();
     this.cargarCategorias();
 
-    // ✅ Escucha cambios en el buscador con 300ms de espera
     this.busquedaSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -84,12 +82,10 @@ export class ProductosComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ✅ Solo emite al Subject — no llama al servidor
   buscar(): void {
     this.busquedaSubject.next(this.busqueda);
   }
 
-  // ✅ Filtra el array local sin petición HTTP
   private filtrarLocal(texto: string): void {
     const q = texto.toLowerCase().trim();
     if (!q) {
@@ -134,7 +130,7 @@ export class ProductosComponent implements OnInit, OnDestroy {
   }
 
   guardar(): void {
-    if (!this.form.nombre || !this.form.precioVenta) {
+    if (!this.form.nombre?.trim() || !Number.isFinite(Number(this.form.precioVenta)) || Number(this.form.precioVenta) <= 0) {
       this.error = 'Nombre y precio de venta son obligatorios.';
       return;
     }
@@ -142,6 +138,14 @@ export class ProductosComponent implements OnInit, OnDestroy {
     const venta  = Number(this.form.precioVenta)  || 0;
     if (venta < compra) {
       this.error = `El precio de venta (S/ ${venta}) no puede ser menor que el de compra (S/ ${compra}). Estarías vendiendo con pérdida.`;
+      return;
+    }
+    if (!Number.isFinite(Number(this.form.stock)) || Number(this.form.stock) < 0) {
+      this.error = 'El stock no puede ser negativo.';
+      return;
+    }
+    if (!Number.isFinite(Number(this.form.stockMinimo)) || Number(this.form.stockMinimo) < 0) {
+      this.error = 'El stock mínimo no puede ser negativo.';
       return;
     }
     if (this.modoEdicion && this.productoEditandoId !== null) {
