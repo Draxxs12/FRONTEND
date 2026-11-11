@@ -1,0 +1,73 @@
+name: Remediar auditoria npm (rama aislada)
+
+on:
+  push:
+    branches:
+      - deps/remediate-npm-audit
+
+permissions:
+  contents: write
+
+jobs:
+  remediation:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          ref: deps/remediate-npm-audit
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Usar npm declarado por el proyecto
+        run: npm install --global npm@11.12.1
+
+      - name: Aplicar correcciones compatibles
+        run: |
+          npm audit fix || true
+          npm ci
+
+      - name: Compilar aplicación
+        run: npm run build
+
+      - name: Ejecutar pruebas unitarias
+        run: npx ng test --watch=false
+
+      - name: Ejecutar pruebas end-to-end
+        run: |
+          npx playwright install --with-deps chromium
+          npm run e2e
+
+      - name: Generar informe de auditoría actualizado
+        if: always()
+        run: |
+          npm audit --json > npm-audit-after.json || true
+          node -e "const a=require('./npm-audit-after.json'); const v=a.metadata?.vulnerabilities || {}; const line='## Resultado de npm audit después de la remediación\n\n| Nivel | Cantidad |\n|---|---:|\n'+['critical','high','moderate','low','info'].map(k=>'| '+k+' | '+(v[k] ?? 0)+' |').join('\n')+'\n\nTotal: **'+(v.total ?? 'sin dato')+'**'; require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, line+'\n');"
+          git status --short
+
+      - name: Guardar lockfile actualizado
+        if: success()
+        run: |
+          if ! git diff --quiet -- package-lock.json; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "fix(deps): aplicar actualizaciones npm compatibles"
+            git push origin HEAD:deps/remediate-npm-audit
+          else
+            echo "El lockfile no cambió; no hay commit de dependencias."
+          fi
+
+      - name: Publicar informe de auditoría
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-after
+          path: npm-audit-after.json
+          if-no-files-found: ignore
