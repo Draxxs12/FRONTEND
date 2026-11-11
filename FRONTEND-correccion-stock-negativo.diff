@@ -1,0 +1,15 @@
+diff --git a/src/app/Pages/productos/productos.component.ts b/src/app/Pages/productos/productos.component.ts
+index f89117a..74a8171 100644
+--- a/src/app/Pages/productos/productos.component.ts
++++ b/src/app/Pages/productos/productos.component.ts
+@@ -138,6 +138,10 @@ export class ProductosComponent implements OnInit, OnDestroy {
+       this.error = 'Nombre y precio de venta son obligatorios.';
+       return;
+     }
++    if (Number(this.form.stock) < 0) {
++      this.error = 'El stock no puede ser negativo.';
++      return;
++    }
+     const compra = Number(this.form.precioCompra) || 0;
+     const venta  = Number(this.form.precioVenta)  || 0;
+     if (venta < compra) {
