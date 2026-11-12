@@ -26,7 +26,6 @@ jobs:
       - name: Compilación Angular de producción
         run: npm run build
       - name: Auditoría de dependencias
-        continue-on-error: true
         run: npm audit --audit-level=high
       - name: Generar informe de auditoría (JSON)
         if: always()
